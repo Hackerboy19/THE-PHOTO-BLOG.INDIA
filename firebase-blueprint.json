@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "HeroConfig": {
+      "title": "Hero Configuration",
+      "description": "Dynamic configurations for the hero section background, background video loop, and display slogans.",
+      "type": "object",
+      "properties": {
+        "backgroundImage": {
+          "type": "string",
+          "description": "The photography image URL of the hero backdrop"
+        },
+        "videoUrl": {
+          "type": "string",
+          "description": "Muted auto-playing background video MP4 stream link"
+        },
+        "sloganTitle": {
+          "type": "string",
+          "description": "Primary high-end brand line layout"
+        },
+        "sloganSubtitle": {
+          "type": "string",
+          "description": "Detailed text descriptor under the title"
+        }
+      },
+      "required": ["backgroundImage", "sloganTitle", "sloganSubtitle"]
+    },
+    "PortfolioItem": {
+      "title": "Portfolio Item",
+      "description": "Cinematic campaign drops and photography frames with metadata details",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the project"
+        },
+        "title": {
+          "type": "string",
+          "description": "Name of the digital campaign"
+        },
+        "category": {
+          "type": "string",
+          "description": "Strategic vertical of the drop"
+        },
+        "client": {
+          "type": "string",
+          "description": "Luxury brand alliance name"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "High fidelity photography capture stream link"
+        },
+        "year": {
+          "type": "string",
+          "description": "Launch year"
+        },
+        "impact": {
+          "type": "string",
+          "description": "Durable commercial traction metric achieved"
+        },
+        "shutter": {
+          "type": "string",
+          "description": "Exp: 1/50, 1/1000 sec"
+        },
+        "iso": {
+          "type": "string",
+          "description": "Exp: ISO 80, 400, 1600"
+        },
+        "aperture": {
+          "type": "string",
+          "description": "Exp: f/1.2, f/2.8"
+        }
+      },
+      "required": ["id", "title", "category", "client", "imageUrl", "year", "impact"]
+    },
+    "EstimatorConfig": {
+      "title": "Estimator Pricing Configuration",
+      "description": "Dynamic price coefficients, base campaign prices and directorial factors for calculation",
+      "type": "object",
+      "properties": {
+        "basePrices": {
+          "type": "object",
+          "description": "Core services base prices mapping"
+        },
+        "scaleMultipliers": {
+          "type": "object",
+          "description": "Multipliers for Boutique, Premium, National takeovers"
+        },
+        "timelineMultipliers": {
+          "type": "object",
+          "description": "Multipliers for Rush, Standard, and Retainers"
+        }
+      },
+      "required": ["basePrices", "scaleMultipliers", "timelineMultipliers"]
+    }
+  },
+  "firestore": {
+    "/settings/hero": {
+      "schema": "HeroConfig",
+      "description": "Active hero styling, media loops, and branding lines setup."
+    },
+    "/settings/estimator": {
+      "schema": "EstimatorConfig",
+      "description": "Active pricing coefficient specifications for estimation calculation."
+    },
+    "/portfolio/{projectId}": {
+      "schema": "PortfolioItem",
+      "description": "Live directory of custom editorial and cinematic pieces."
+    }
+  }
+}

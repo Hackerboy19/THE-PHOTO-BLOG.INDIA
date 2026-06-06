@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. DEFAULT DENY CATCH-ALL
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. HARDENED REUSABLE PRIMITIVES
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // Identifies authorized administrator account
+    function isAdmin() {
+      return isVerifiedEmail() && (
+        request.auth.token.email == "pm37855@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 2. VALIDATION BLUEPRINTS
+    
+    // Checks validity of Hero modifications
+    function isValidHeroConfig(data) {
+      return data.keys().hasAll(['backgroundImage', 'videoUrl', 'sloganTitle', 'sloganSubtitle']) &&
+             data.keys().size() == 4 &&
+             data.backgroundImage is string && data.backgroundImage.size() < 2000 &&
+             data.videoUrl is string && data.videoUrl.size() < 2000 &&
+             data.sloganTitle is string && data.sloganTitle.size() < 1000 &&
+             data.sloganSubtitle is string && data.sloganSubtitle.size() < 2000;
+    }
+
+    // Checks validity of Portfolio modifications
+    function isValidPortfolioItem(data) {
+      return data.keys().hasAll(['id', 'title', 'category', 'client', 'imageUrl', 'year', 'impact']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.client is string && data.client.size() <= 100 &&
+             data.imageUrl is string && data.imageUrl.size() < 2000 &&
+             data.year is string && data.year.size() <= 10 &&
+             data.impact is string && data.impact.size() <= 100 &&
+             // Camera specs are optional fields, validate them if they are present
+             (!data.keys().contains('shutter') || (data.shutter is string && data.shutter.size() <= 50)) &&
+             (!data.keys().contains('iso') || (data.iso is string && data.iso.size() <= 50)) &&
+             (!data.keys().contains('aperture') || (data.aperture is string && data.aperture.size() <= 50));
+    }
+
+    // Checks validity of Estimator Pricing Configurations
+    function isValidEstimatorConfig(data) {
+      return data.keys().hasAll(['basePrices', 'scaleMultipliers', 'timelineMultipliers']) &&
+             data.basePrices is map &&
+             data.scaleMultipliers is map &&
+             data.timelineMultipliers is map;
+    }
+
+    // ==========================================
+    // RESOURCE ROUTES
+    // ==========================================
+
+    // settings/hero & settings/estimator
+    match /settings/{settingId} {
+      allow read: if true; // Public access for reading core site layout
+      allow write: if isAdmin() && (
+        (settingId == "hero" && isValidHeroConfig(incoming())) ||
+        (settingId == "estimator" && isValidEstimatorConfig(incoming()))
+      );
+    }
+
+    // /portfolio/{projectId}
+    match /portfolio/{projectId} {
+      allow read: if true; // Public access for reading visual pieces
+      allow create: if isAdmin() && isValidId(projectId) && isValidPortfolioItem(incoming());
+      allow update: if isAdmin() && isValidId(projectId) && isValidPortfolioItem(incoming());
+      allow delete: if isAdmin() && isValidId(projectId);
+    }
+
+    // admins/{adminId} directory to support multi-admin setups
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && request.auth.uid == adminId;
+      allow write: if false; // System only initialization to preserve secure access control
+    }
+  }
+}

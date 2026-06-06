@@ -97,13 +97,10 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
     if (timeline === 'standard') timeMult = standardMult;
     if (timeline === 'retainer') timeMult = retainerMult;
 
-    const totalEstimateVal = Math.round(base * scaleMult * timeMult);
+    const totalEstimateVal = 0;
     
-    // Convert to mock INR equivalent representation for local flare
-    const formattedRange = `₹${(totalEstimateVal * 60).toLocaleString('en-IN')} - ₹${(Math.round(totalEstimateVal * 1.3) * 60).toLocaleString('en-IN')}`;
-
     return {
-      range: formattedRange,
+      range: "Bespoke Quote Upon Evaluation",
       gearSpec,
       crewSize,
       scaleLabel,
@@ -122,7 +119,7 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
 
     const summary = `Selected Campaign Elements: ${serviceNames}. Scale: ${scaleText}. Schedule: ${timelineText}. Projected Specs: ${calculatedMetrics.crewSize} using ${calculatedMetrics.gearSpec}.`;
     
-    onIntegrate(summary, serviceNames, calculatedMetrics.range);
+    onIntegrate(summary, serviceNames, "Bespoke Quote Upon Evaluation");
   };
 
   return (
@@ -256,7 +253,7 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
             <p className="text-[9px] text-zinc-650 text-center mt-3 leading-normal font-mono uppercase">
-              * Subject to custom script evaluation, logistics, and visual complexity adjustments.
+              * Investment custom evaluated following script selection and directorial layout.
             </p>
           </div>
         </div>

@@ -14,14 +14,41 @@ import {
   Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Magnetic } from './EditorialAnimations';
 
 interface WhatsAppProfileCardProps {
   onImageClick?: (item: any) => void;
   portfolioItems: any[];
+  config?: {
+    slogan?: string;
+    quote?: string;
+    hours?: string;
+    followers?: string;
+    phone?: string;
+  };
 }
 
-export default function WhatsAppProfileCard({ onImageClick, portfolioItems }: WhatsAppProfileCardProps) {
+export default function WhatsAppProfileCard({ onImageClick, portfolioItems, config }: WhatsAppProfileCardProps) {
   const [showHoursDropdown, setShowHoursDropdown] = useState(false);
+
+  // 1. Get the current day of the week (0 = Sunday, 1 = Monday, ..., 5 = Friday, 6 = Saturday)
+  const currentDayIndex = new Date().getDay();
+
+  // 2. Map the indices to match your display order
+  const daysOfWeek = [
+    { name: 'Sunday', hours: 'CLOSED', index: 0 },
+    { name: 'Monday', hours: config?.hours || '10:00 am – 6:00 pm', index: 1 },
+    { name: 'Tuesday', hours: config?.hours || '10:00 am – 6:00 pm', index: 2 },
+    { name: 'Wednesday', hours: config?.hours || '10:00 am – 6:00 pm', index: 3 },
+    { name: 'Thursday', hours: config?.hours || '10:00 am – 6:00 pm', index: 4 },
+    { name: 'Friday', hours: config?.hours || '10:00 am – 6:00 pm', index: 5 },
+    { name: 'Saturday', hours: config?.hours || '10:00 am – 6:00 pm', index: 6 },
+  ];
+
+  const currentDay = daysOfWeek.find(day => day.index === currentDayIndex);
+  const currentBusinessDayText = currentDay 
+    ? `${currentDay.name} (${currentDay.index === 0 ? 'Closed' : 'Open'})`
+    : 'Business hours';
 
   // The premium custom SVG logo of "THE PHOTO BLOG.INDIA / MUSKAN" as shown in the screenshot
   const BrandLogoSVG = () => (
@@ -95,14 +122,14 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems }: Wh
               <Sparkles className="w-4 h-4 text-zinc-400" />
             </div>
             <p className="text-sm text-[#e9edef] leading-relaxed font-sans font-medium">
-              We are a new-age marketing agency providing social media management, performance marketing, branding & identity.
+              {config?.slogan || "We are a new-age marketing agency providing social media management, performance marketing, branding & identity."}
             </p>
           </div>
           <div className="h-px bg-white/5 my-2" />
           <div className="flex items-start gap-3">
             <div className="mt-1 w-5 text-[#8696a0] shrink-0" />
             <p className="text-xs text-[#8696a0] italic leading-relaxed">
-              "We thrive to turn your brand into a story which the digital media remembers."
+              "{config?.quote || "We thrive to turn your brand into a story which the digital media remembers."}"
             </p>
           </div>
         </div>
@@ -117,11 +144,11 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems }: Wh
               <Clock className="w-4 h-4 text-[#8696a0] group-hover:text-white transition-colors" />
               <div className="text-left">
                 <span className="text-xs text-[#8696a0] block uppercase font-mono tracking-widest">Business hours</span>
-                <span className="text-sm font-semibold text-zinc-100">Friday (Open)</span>
+                <span className="text-sm font-semibold text-zinc-100">{currentBusinessDayText}</span>
               </div>
             </div>
             <div className="text-right flex items-center gap-1.5">
-              <span className="text-xs text-zinc-300 font-mono">10:00 am – 6:00 pm</span>
+              <span className="text-xs text-zinc-300 font-mono">{config?.hours || "10:00 am – 6:00 pm"}</span>
               <ChevronRight className={`w-4 h-4 text-[#8696a0] transition-transform ${showHoursDropdown ? 'rotate-90' : ''}`} />
             </div>
           </div>
@@ -133,15 +160,24 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems }: Wh
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="overflow-hidden pt-2 font-mono text-[10px] text-[#8696a0] space-y-1 pl-7 text-left border-t border-white/5 mt-2"
+                className="overflow-hidden pt-2 font-mono text-[10px] space-y-1 pl-7 text-left border-t border-white/5 mt-2"
               >
-                <div className="flex justify-between py-0.5"><span>Monday</span><span className="text-emerald-400">10:00 am – 6:00 pm</span></div>
-                <div className="flex justify-between py-0.5"><span>Tuesday</span><span className="text-emerald-400">10:00 am – 6:00 pm</span></div>
-                <div className="flex justify-between py-0.5"><span>Wednesday</span><span className="text-emerald-400">10:00 am – 6:00 pm</span></div>
-                <div className="flex justify-between py-0.5"><span>Thursday</span><span className="text-emerald-400">10:00 am – 6:00 pm</span></div>
-                <div className="flex justify-between py-0.5 font-bold text-[#e9edef]"><span>Friday</span><span className="text-emerald-400">10:00 am – 6:00 pm</span></div>
-                <div className="flex justify-between py-0.5"><span>Saturday</span><span className="text-emerald-400">10:00 am – 6:00 pm</span></div>
-                <div className="flex justify-between py-0.5"><span>Sunday</span><span className="text-red-400 uppercase">Closed</span></div>
+                {daysOfWeek.map((day) => {
+                  const isToday = currentDayIndex === day.index;
+                  return (
+                    <div 
+                      key={day.name} 
+                      className={`flex justify-between py-1 px-2 ${
+                        isToday 
+                          ? 'text-[#bf8b33] font-bold bg-white/5 border-l-2 border-[#bf8b33]' 
+                          : 'text-zinc-400'
+                      }`}
+                    >
+                      <span>{day.name} {isToday && '(Today)'}</span>
+                      <span>{day.hours}</span>
+                    </div>
+                  );
+                })}
               </motion.div>
             )}
           </AnimatePresence>
@@ -199,7 +235,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems }: Wh
                 <span className="text-xs font-semibold text-zinc-100">@thephotoblog.india.1</span>
               </div>
               <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded-none font-mono text-zinc-400 group-hover:text-white transition-all">
-                38 Followers
+                {config?.followers || "38K Followers"}
               </span>
             </div>
           </a>
@@ -250,15 +286,17 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems }: Wh
         </div>
 
         {/* Interactive chat activator */}
-        <div className="pt-2">
-          <a
-            href="https://wa.me/+919145961226?text=Hi%20Muskan%2C%20we'd%20love%20to%20discuss%20a%20social%20media%20management%20and%20branding%20collaboration%20with%20The%20Photo%20Blog%20India%20hub."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full bg-[#00a884] hover:bg-[#00bfa5] text-black py-3 px-4 font-bold text-xs tracking-widest uppercase transition-all rounded-none flex items-center justify-center gap-2 font-mono"
-          >
-            Start WhatsApp Chat <MessageCircle className="w-4 h-4 fill-black" />
-          </a>
+        <div className="pt-2 text-center">
+          <Magnetic>
+            <a
+              href={`https://wa.me/+91${config?.phone || "9145961226"}?text=Hi%20Muskan%2C%20we'd%20love%20to%20discuss%20a%20social%20media%20management%20and%20branding%20collaboration%20with%20The%20Photo%20Blog%20India%20hub.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full min-w-[280px] bg-[#00a884] hover:bg-[#00bfa5] text-black py-3 px-4 font-bold text-xs tracking-widest uppercase transition-all rounded-none items-center justify-center gap-2 font-mono"
+            >
+              Start WhatsApp Chat <MessageCircle className="w-4 h-4 fill-black" />
+            </a>
+          </Magnetic>
         </div>
 
       </div>

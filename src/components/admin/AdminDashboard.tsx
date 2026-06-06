@@ -1,8 +1,28 @@
 import React, { useState } from 'react';
-import { Shield, Film, Camera, DollarSign, LogOut, Sliders, Settings, Zap } from 'lucide-react';
+import { 
+  Shield, 
+  Film, 
+  Camera, 
+  DollarSign, 
+  LogOut, 
+  Sliders, 
+  Settings, 
+  Zap, 
+  Info, 
+  ListTodo, 
+  HelpCircle, 
+  MessageSquare, 
+  Eye 
+} from 'lucide-react';
 import HeroEditor from './HeroEditor';
 import PortfolioManager from './PortfolioManager';
 import EstimatorConfigurator from './EstimatorConfigurator';
+import AboutEditor from './AboutEditor';
+import ServicesControl from './ServicesControl';
+import WhyUsControl from './WhyUsControl';
+import TestimonialsControl from './TestimonialsControl';
+import WhatsAppConfigurator from './WhatsAppConfigurator';
+import VisibilityControl from './VisibilityControl';
 import { clearMockUser } from '../../lib/firebase';
 
 interface AdminDashboardProps {
@@ -10,19 +30,40 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'hero' | 'portfolio' | 'estimator';
+type TabType = 
+  | 'hero' 
+  | 'portfolio' 
+  | 'estimator' 
+  | 'about' 
+  | 'services' 
+  | 'whyUs' 
+  | 'testimonials' 
+  | 'whatsapp' 
+  | 'visibility';
 
 export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('hero');
+  const [activeTab, setActiveTab] = useState<TabType>('visibility');
 
   const handleSignOut = () => {
     clearMockUser();
     onLogout();
   };
 
+  const tabs: { type: TabType; label: string; icon: React.ComponentType<any> }[] = [
+    { type: 'visibility', label: 'Section Rules', icon: Eye },
+    { type: 'hero', label: 'Hero Slogans', icon: Settings },
+    { type: 'about', label: 'About Backstory', icon: Info },
+    { type: 'services', label: 'Capabilities Grid', icon: ListTodo },
+    { type: 'estimator', label: 'Price Engine', icon: Sliders },
+    { type: 'whyUs', label: 'Trust Vectors', icon: HelpCircle },
+    { type: 'portfolio', label: 'Live Portfolio', icon: Camera },
+    { type: 'testimonials', label: 'Endorsements', icon: MessageSquare },
+    { type: 'whatsapp', label: 'WhatsApp Widget', icon: Film },
+  ];
+
   return (
     <div className="min-h-[90vh] bg-[#050507] text-[#ebebeb] py-10 px-4 sm:px-6 md:px-8">
-      <div className="max-w-7xl mx-auto space-y-10">
+      <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Top visual layout block */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-8">
@@ -56,39 +97,25 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         </div>
 
         {/* Tab Selection buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-[#0a0a0c]/85 border border-white/5 p-1 max-w-2xl text-left">
-          <button
-            onClick={() => setActiveTab('hero')}
-            className={`flex items-center gap-3 p-3.5 font-mono text-[10.5px] tracking-widest uppercase transition-colors rounded-none cursor-pointer ${
-              activeTab === 'hero' 
-                ? 'bg-white text-black font-semibold' 
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-900/50'
-            }`}
-          >
-            <Settings className="w-4 h-4 shrink-0" /> Hero Slogans
-          </button>
-
-          <button
-            onClick={() => setActiveTab('portfolio')}
-            className={`flex items-center gap-3 p-3.5 font-mono text-[10.5px] tracking-widest uppercase transition-colors rounded-none cursor-pointer ${
-              activeTab === 'portfolio' 
-                ? 'bg-white text-black font-semibold' 
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-900/50'
-            }`}
-          >
-            <Camera className="w-4 h-4 shrink-0" /> Live Portfolio
-          </button>
-
-          <button
-            onClick={() => setActiveTab('estimator')}
-            className={`flex items-center gap-3 p-3.5 font-mono text-[10.5px] tracking-widest uppercase transition-colors rounded-none cursor-pointer ${
-              activeTab === 'estimator' 
-                ? 'bg-white text-black font-semibold' 
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-900/50'
-            }`}
-          >
-            <Sliders className="w-4 h-4 shrink-0" /> Price Engine
-          </button>
+        <div className="flex flex-wrap gap-1.5 bg-[#0a0a0c]/80 border border-white/5 p-1.5 max-w-full text-left">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isSelected = activeTab === tab.type;
+            return (
+              <button
+                key={tab.type}
+                onClick={() => setActiveTab(tab.type)}
+                className={`flex items-center gap-2 px-3 py-2.5 font-mono text-[10px] sm:text-[10.5px] tracking-widest uppercase transition-colors rounded-none cursor-pointer border ${
+                  isSelected 
+                    ? 'border-white bg-white text-black font-semibold' 
+                    : 'border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/50'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Core display panels */}
@@ -99,9 +126,15 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           </div>
 
           <div className="relative z-10">
+            {activeTab === 'visibility' && <VisibilityControl />}
             {activeTab === 'hero' && <HeroEditor />}
             {activeTab === 'portfolio' && <PortfolioManager />}
             {activeTab === 'estimator' && <EstimatorConfigurator />}
+            {activeTab === 'about' && <AboutEditor />}
+            {activeTab === 'services' && <ServicesControl />}
+            {activeTab === 'whyUs' && <WhyUsControl />}
+            {activeTab === 'testimonials' && <TestimonialsControl />}
+            {activeTab === 'whatsapp' && <WhatsAppConfigurator />}
           </div>
 
         </div>

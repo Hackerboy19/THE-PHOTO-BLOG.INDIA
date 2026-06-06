@@ -13,6 +13,10 @@ import {
   Clock,
   ShieldCheck,
   Instagram,
+  Award,
+  Heart,
+  Shield,
+  Zap,
   Mail,
   Phone,
   MessageCircle,
@@ -26,7 +30,8 @@ import {
   Linkedin,
   ChevronLeft,
   ChevronRight,
-  ArrowUp
+  ArrowUp,
+  Share2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -41,6 +46,7 @@ import CampaignEstimator from './components/CampaignEstimator';
 import InstagramGrid from './components/InstagramGrid';
 import WhatsAppProfileCard from './components/WhatsAppProfileCard';
 import { ContactFormData, PortfolioItem } from './types';
+import { Magnetic, SplitTextReveal } from './components/EditorialAnimations';
 
 // Admin System Imports
 import { 
@@ -49,21 +55,39 @@ import {
   getMockUser, 
   saveMockUser, 
   clearMockUser, 
-  HeroSettings 
+  HeroSettings,
+  getAboutSettings,
+  getServices,
+  getWhyChooseUs,
+  getTestimonials,
+  getWhatsAppConfig,
+  getSectionVisibility
 } from './lib/firebase';
 import AdminLogin from './components/admin/AdminLogin';
 import AdminDashboard from './components/admin/AdminDashboard';
 
 // Sophisticated editorial motion variants
 const fadeInUpVariants = {
-  hidden: { opacity: 0, y: 35 },
+  hidden: { opacity: 0, filter: "blur(12px)", y: 35 },
   visible: { 
     opacity: 1, 
-    y: 0, 
+    filter: "blur(0px)",
+    y: 0,
     transition: { 
-      duration: 0.9, 
+      duration: 1.2, 
       ease: [0.16, 1, 0.3, 1] 
     } 
+  }
+};
+
+const hoverTrackingVariants = {
+  rest: { letterSpacing: "0.2em", borderBottomColor: "rgba(255, 255, 255, 0)", borderBottomWidth: "1px", paddingBottom: "2px" },
+  hover: { 
+    letterSpacing: "0.28em", 
+    borderBottomColor: "rgba(255, 255, 255, 0.9)",
+    borderBottomWidth: "1px",
+    paddingBottom: "2px",
+    transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
   }
 };
 
@@ -88,6 +112,12 @@ export default function App() {
   // Dynamic Content States
   const [heroConfig, setHeroConfig] = useState<HeroSettings | null>(null);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+  const [aboutSettings, setAboutSettings] = useState<any>(null);
+  const [servicesData, setServicesData] = useState<any[]>([]);
+  const [whyChooseUsData, setWhyChooseUsData] = useState<any[]>([]);
+  const [testimonialsData, setTestimonialsData] = useState<any[]>([]);
+  const [whatsAppConfig, setWhatsAppConfig] = useState<any>(null);
+  const [sectionVisibility, setSectionVisibility] = useState<any>(null);
   
   // Admin Navigation and Session States
   const [isAdminRoute, setIsAdminRoute] = useState(
@@ -114,12 +144,34 @@ export default function App() {
   useEffect(() => {
     async function loadResources() {
       try {
-        const [hero, list] = await Promise.all([
+        const [hero, list, about, services, whyUs, testimonials, whatsapp, visibility] = await Promise.all([
           getHeroData(),
-          getPortfolioItems()
+          getPortfolioItems(),
+          getAboutSettings(),
+          getServices(),
+          getWhyChooseUs(),
+          getTestimonials(),
+          getWhatsAppConfig(),
+          getSectionVisibility()
         ]);
         setHeroConfig(hero);
         setPortfolioItems(list);
+        setAboutSettings(about);
+        setServicesData(services);
+        setWhyChooseUsData(whyUs);
+        setTestimonialsData(testimonials);
+        setWhatsAppConfig(whatsapp);
+        setSectionVisibility(visibility);
+
+        // Auto-open portfolio item if shared via "?project=id" URL format
+        const params = new URLSearchParams(window.location.search);
+        const projectId = params.get('project');
+        if (projectId && list && list.length > 0) {
+          const matched = list.find((item: any) => item.id === projectId);
+          if (matched) {
+            setSelectedPortfolioItem(matched);
+          }
+        }
       } catch (err) {
         console.warn("Dynamic synchronizer warning:", err);
       }
@@ -160,7 +212,7 @@ export default function App() {
     phone: '',
     companyName: '',
     serviceOfInterest: 'Cinematic Brand Campaigns',
-    estimatedBudget: '₹1,50,050 - ₹2,35,000',
+    estimatedBudget: 'Bespoke Quote Upon Evaluation',
     projectMessage: ''
   });
 
@@ -169,6 +221,49 @@ export default function App() {
 
   // Lightbox Modal state
   const [selectedPortfolioItem, setSelectedPortfolioItem] = useState<PortfolioItem | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Reset copied state when portfolio item changes
+  useEffect(() => {
+    setIsCopied(false);
+  }, [selectedPortfolioItem]);
+
+  const handleCloseLightbox = () => {
+    setSelectedPortfolioItem(null);
+    if (window.location.search.includes('project=')) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('project');
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  const handleSharePortfolio = async () => {
+    if (!selectedPortfolioItem) return;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(selectedPortfolioItem.id)}`;
+    
+    // Attempt web native share if supported and permitted
+    if (navigator.share && navigator.canShare && navigator.canShare({ url: shareUrl })) {
+      try {
+        await navigator.share({
+          title: `${selectedPortfolioItem.title} | THE PHOTO BLOG.INDIA`,
+          text: `Check out this digital collaboration: "${selectedPortfolioItem.title}" with ${selectedPortfolioItem.client}.`,
+          url: shareUrl
+        });
+        return;
+      } catch (err) {
+        console.warn("Native share failed, falling back to copy to clipboard:", err);
+      }
+    }
+
+    // Clipboard fallback
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2500);
+    } catch (err) {
+      console.error("Could not write item url to clipboard:", err);
+    }
+  };
 
   const handleNextPortfolioItem = () => {
     if (!selectedPortfolioItem || portfolioItems.length === 0) return;
@@ -188,7 +283,7 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!selectedPortfolioItem) return;
-      if (e.key === 'Escape') setSelectedPortfolioItem(null);
+      if (e.key === 'Escape') handleCloseLightbox();
       if (e.key === 'ArrowRight') handleNextPortfolioItem();
       if (e.key === 'ArrowLeft') handlePrevPortfolioItem();
     };
@@ -330,23 +425,82 @@ export default function App() {
           </button>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8 text-[10px] font-mono tracking-[0.2em] text-zinc-400 uppercase">
-            <button onClick={() => scrollToSection('about')} className="hover:text-white transition-colors cursor-pointer">About</button>
-            <button onClick={() => scrollToSection('services')} className="hover:text-white transition-colors cursor-pointer">Services</button>
-            <button onClick={() => scrollToSection('estimator')} className="hover:text-white transition-colors cursor-pointer">Estimator</button>
-            <button onClick={() => scrollToSection('why-us')} className="hover:text-white transition-colors cursor-pointer">Why Us</button>
-            <button onClick={() => scrollToSection('portfolio')} className="hover:text-white transition-colors cursor-pointer">Portfolio</button>
-            <button onClick={() => scrollToSection('instagram')} className="hover:text-white transition-colors cursor-pointer">Feed</button>
+          <nav className="hidden lg:flex items-center gap-6 text-[10px] font-mono text-zinc-400 uppercase">
+            <motion.button
+              initial="rest"
+              whileHover="hover"
+              animate="rest"
+              variants={hoverTrackingVariants}
+              onClick={() => scrollToSection('about')}
+              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+            >
+              About
+            </motion.button>
+            <motion.button
+              initial="rest"
+              whileHover="hover"
+              animate="rest"
+              variants={hoverTrackingVariants}
+              onClick={() => scrollToSection('services')}
+              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+            >
+              Services
+            </motion.button>
+            <motion.button
+              initial="rest"
+              whileHover="hover"
+              animate="rest"
+              variants={hoverTrackingVariants}
+              onClick={() => scrollToSection('estimator')}
+              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+            >
+              Estimator
+            </motion.button>
+            <motion.button
+              initial="rest"
+              whileHover="hover"
+              animate="rest"
+              variants={hoverTrackingVariants}
+              onClick={() => scrollToSection('why-us')}
+              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+            >
+              Why Us
+            </motion.button>
+            <motion.button
+              initial="rest"
+              whileHover="hover"
+              animate="rest"
+              variants={hoverTrackingVariants}
+              onClick={() => scrollToSection('portfolio')}
+              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+            >
+              Portfolio
+            </motion.button>
+            <motion.button
+              initial="rest"
+              whileHover="hover"
+              animate="rest"
+              variants={hoverTrackingVariants}
+              onClick={() => scrollToSection('instagram')}
+              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+            >
+              Feed
+            </motion.button>
           </nav>
 
           {/* Action button */}
           <div className="hidden sm:flex items-center gap-4">
-            <button
-              onClick={() => scrollToSection('contact')}
-              className="bg-transparent hover:bg-white text-white hover:text-black text-[10px] font-mono tracking-widest uppercase px-6 py-3 border border-white transition-all cursor-pointer"
-            >
-              Inquire Now
-            </button>
+            <Magnetic>
+              <motion.button
+                initial={{ letterSpacing: "0.15em", borderColor: "rgba(255,255,255,0.2)" }}
+                whileHover={{ letterSpacing: "0.22em", borderColor: "rgba(255,255,255,1)" }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                onClick={() => scrollToSection('contact')}
+                className="bg-transparent text-white text-[10px] font-mono uppercase px-6 py-3 border transition-all cursor-pointer"
+              >
+                Inquire Now
+              </motion.button>
+            </Magnetic>
           </div>
 
           {/* Mobile Menu Icon */}
@@ -451,18 +605,13 @@ export default function App() {
           </motion.div>
 
           {/* Large display titles */}
-          <motion.h1
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-4xl sm:text-6xl lg:text-8xl font-serif text-white leading-[1.05] tracking-tight max-w-4xl"
-          >
+          <h1 className="text-4xl sm:text-6xl lg:text-8xl font-serif text-white leading-[1.05] tracking-tight max-w-4xl">
             {heroConfig?.headline ? (
-              <span>{heroConfig.headline}</span>
+              <SplitTextReveal text={heroConfig.headline} delay={0.1} />
             ) : (
-              <>We capture the <span className="italic font-normal text-zinc-300">extraordinary</span> soul of brands.</>
+              <SplitTextReveal text="We capture the _extraordinary_ soul of brands." delay={0.1} />
             )}
-          </motion.h1>
+          </h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -478,22 +627,26 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-10 flex flex-col xs:flex-row items-center justify-center lg:justify-start gap-4 w-full xs:w-auto"
+            className="mt-10 flex flex-col xs:flex-row items-center justify-center lg:justify-start gap-6 w-full xs:w-auto"
           >
-            <button
-              onClick={() => scrollToSection('contact')}
-              className="w-full xs:w-auto bg-white hover:bg-zinc-200 text-black px-8 py-4 rounded-none font-sans font-bold text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-            >
-              Contact Us Let's Co-create
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <Magnetic>
+              <button
+                onClick={() => scrollToSection('contact')}
+                className="w-full sm:w-auto bg-white hover:bg-zinc-200 text-black px-8 py-4 rounded-none font-sans font-bold text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              >
+                Inquire Now / Co-create
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </Magnetic>
             
-            <button
-              onClick={() => scrollToSection('estimator')}
-              className="w-full xs:w-auto border border-white/20 hover:border-white bg-transparent text-zinc-300 hover:text-white px-8 py-4 rounded-none font-sans font-medium text-xs tracking-widest uppercase transition-all cursor-pointer"
-            >
-              Build Campaign Plan
-            </button>
+            <Magnetic>
+              <button
+                onClick={() => scrollToSection('estimator')}
+                className="w-full sm:w-auto border border-white/20 hover:border-white bg-transparent text-zinc-300 hover:text-white px-8 py-4 rounded-none font-sans font-medium text-xs tracking-widest uppercase transition-all cursor-pointer"
+              >
+                Build Campaign Plan
+              </button>
+            </Magnetic>
           </motion.div>
 
           {/* Subtle live indicators at section bottom */}
@@ -512,402 +665,438 @@ export default function App() {
       </section>
 
       {/* 2. ABOUT COMPANY SECTION */}
-      <motion.section 
-        id="about" 
-        className="py-24 md:py-32 bg-black border-y border-white/10 px-6 md:px-12 relative"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          
-          {/* Graphic Image Framing */}
-          <div className="lg:col-span-5 relative group">
+      {(!sectionVisibility || sectionVisibility.about) && (
+        <motion.section 
+          id="about" 
+          className="py-24 md:py-32 bg-black border-y border-white/10 px-6 md:px-12 relative"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             
-            {/* Cinematic crop frame lines */}
-            <div className="absolute -inset-4 border border-white/5 pointer-events-none rounded-none" />
-            <div className="absolute top-2 left-2 text-[8px] font-mono text-zinc-600 uppercase tracking-widest">FILM PREVIEW // FRAME #392</div>
-            <div className="absolute bottom-2 right-2 text-[8px] font-mono text-zinc-600 uppercase tracking-widest">RESOLUTION: 8K UNCOMPRESSED</div>
+            {/* Graphic Image Framing */}
+            <div className="lg:col-span-5 relative group">
+              
+              {/* Cinematic crop frame lines */}
+              <div className="absolute -inset-4 border border-white/5 pointer-events-none rounded-none" />
+              <div className="absolute top-2 left-2 text-[8px] font-mono text-zinc-600 uppercase tracking-widest">FILM PREVIEW // FRAME #392</div>
+              <div className="absolute bottom-2 right-2 text-[8px] font-mono text-zinc-600 uppercase tracking-widest">RESOLUTION: 8K UNCOMPRESSED</div>
 
-            <div className="aspect-square md:aspect-[4/5] rounded-none overflow-hidden bg-zinc-900 border border-white/10">
-              <img
-                src={ABOUT_IMAGE}
-                alt="Director portrait"
-                className="w-full h-full object-cover grayscale brightness-95 group-hover:grayscale-0 transition-all duration-700 hover:scale-102"
-                referrerPolicy="no-referrer"
-              />
+              <div className="aspect-square md:aspect-[4/5] rounded-none overflow-hidden bg-zinc-900 border border-white/10">
+                <img
+                  src={aboutSettings?.aboutImage || ABOUT_IMAGE}
+                  alt="Director portrait"
+                  className="w-full h-full object-cover grayscale brightness-95 group-hover:grayscale-0 transition-all duration-700 hover:scale-102"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              {/* Simulated Live Metadata strip below */}
+              <div className="absolute bottom-4 left-4 right-4 bg-black/90 px-3 py-2 border border-white/10 rounded-none flex items-center justify-between text-[9px] font-mono tracking-wider text-zinc-400">
+                <span className="flex items-center gap-1"><Camera className="w-3.5" /> 35mm Prime</span>
+                <span>{aboutSettings?.shutter || "1/250"}</span>
+                <span>ISO {aboutSettings?.iso || "100"}</span>
+                <span>{aboutSettings?.aperture || "f/1.4"}</span>
+              </div>
             </div>
 
-            {/* Simulated Live Metadata strip below */}
-            <div className="absolute bottom-4 left-4 right-4 bg-black/90 px-3 py-2 border border-white/10 rounded-none flex items-center justify-between text-[9px] font-mono tracking-wider text-zinc-400">
-              <span className="flex items-center gap-1"><Camera className="w-3.5" /> 35mm Prime</span>
-              <span>1/48s</span>
-              <span>ISO 800</span>
-              <span>T1.5</span>
+            {/* About Text Content Column */}
+            <div className="lg:col-span-7 space-y-6">
+              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">THE AGENCY</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white leading-tight">
+                A high-end marketing agency focusing on <span className="italic font-normal text-zinc-350">immersive, cinematic</span> brand alignment.
+              </h2>
+              
+              <div className="text-zinc-[#c8c8c8] text-sm md:text-base leading-relaxed space-y-4">
+                {aboutSettings?.backstory ? (
+                  <p className="whitespace-pre-line font-sans">{aboutSettings.backstory}</p>
+                ) : (
+                  <>
+                    <p className="text-zinc-400">
+                      Founded under the creative vision of premier Indian media designers, **THE PHOTO BLOG.INDIA** has grown into an elite creative firm. We reject the standard, dry, cookie-cutter social media formulas. We treat every social post, video script, and campaign drop as a high-end cinematic editorial launch.
+                    </p>
+
+                    <p className="text-zinc-400">
+                      We connect luxury international hotel chains, elite lifestyle watch labels, artisanal design houses, and commercial vehicles with audiences who demand high quality. Your brand deserves to be documented through a lens that respects complexity, depth, and absolute aesthetic standards.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Core facts blocks */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-6">
+                <div className="border-l border-white/20 pl-4 space-y-1">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">EXPERIENCE</span>
+                  <div className="text-lg font-bold font-sans text-white">8+ Years</div>
+                </div>
+                <div className="border-l border-white/20 pl-4 space-y-1">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">COLLABORATIONS</span>
+                  <div className="text-lg font-bold font-sans text-white">50+ Elite Brands</div>
+                </div>
+                <div className="border-l border-white/20 pl-4 space-y-1 col-span-2 md:col-span-1">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">INSTAGRAM</span>
+                  <div className="text-lg font-bold font-sans text-white">@thephotoblog.india.1</div>
+                </div>
+              </div>
+
             </div>
+
           </div>
-
-          {/* About Text Content Column */}
-          <div className="lg:col-span-7 space-y-6">
-            <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">THE AGENCY</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white leading-tight">
-              A high-end marketing agency focusing on <span className="italic font-normal text-zinc-350">immersive, cinematic</span> brand alignment.
-            </h2>
-            
-            <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
-              Founded under the creative vision of premier Indian media designers, **THE PHOTO BLOG.INDIA** has grown into an elite creative firm. We reject the standard, dry, cookie-cutter social media formulas. We treat every social post, video script, and campaign drop as a high-end cinematic editorial launch.
-            </p>
-
-            <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
-              We connect luxury international hotel chains, elite lifestyle watch labels, artisanal design houses, and commercial vehicles with audiences who demand high quality. Your brand deserves to be documented through a lens that respects complexity, depth, and absolute aesthetic standards.
-            </p>
-
-            {/* Core facts blocks */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-6">
-              <div className="border-l border-white/20 pl-4 space-y-1">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">EXPERIENCE</span>
-                <div className="text-lg font-bold font-sans text-white">8+ Years</div>
-              </div>
-              <div className="border-l border-white/20 pl-4 space-y-1">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">COLLABORATIONS</span>
-                <div className="text-lg font-bold font-sans text-white">50+ Elite Brands</div>
-              </div>
-              <div className="border-l border-white/20 pl-4 space-y-1 col-span-2 md:col-span-1">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">INSTAGRAM</span>
-                <div className="text-lg font-bold font-sans text-white">@thephotoblog.india.1</div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      </motion.section>
+        </motion.section>
+      )}
 
       {/* 3. OUR SERVICES SECTION */}
-      <motion.section 
-        id="services" 
-        className="py-24 md:py-32 bg-transparent px-6 md:px-12 relative border-b border-white/10"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={staggerContainer}
-      >
-        <div className="max-w-7xl mx-auto space-y-16">
-          
-          {/* Header */}
-          <motion.div 
-            variants={fadeInUpVariants}
-            className="flex flex-col md:flex-row md:items-end justify-between gap-6"
-          >
-            <div className="max-w-xl space-y-2">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Core Capabilities</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Our Services Spec</h2>
-              <p className="text-sm text-zinc-400">Crafting deliberate digital touchpoints. We turn standard advertising assets into emotional cinematic experiences.</p>
-            </div>
+      {(!sectionVisibility || sectionVisibility.services) && (
+        <motion.section 
+          id="services" 
+          className="py-24 md:py-32 bg-transparent px-6 md:px-12 relative border-b border-white/10"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={staggerContainer}
+        >
+          <div className="max-w-7xl mx-auto space-y-16">
             
-            {/* Estimate package navigation shortcut */}
-            <button
-               onClick={() => scrollToSection('estimator')}
-               className="flex items-center gap-2 text-[10px] font-mono tracking-widest text-white hover:text-zinc-400 transition-all uppercase self-start group"
+            {/* Header */}
+            <motion.div 
+              variants={fadeInUpVariants}
+              className="flex flex-col md:flex-row md:items-end justify-between gap-6"
             >
-              Interactive Estimator
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </motion.div>
-
-          {/* Services Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-            {SERVICES_DATA.map((service, idx) => (
-              <motion.div
-                key={service.id}
-                variants={fadeInUpVariants}
-                className="group relative bg-[#0a0a0a] border border-white/10 p-8 md:p-10 rounded-none transition-all duration-300 flex flex-col justify-between overflow-hidden hover:border-white/30"
+              <div className="max-w-xl space-y-2">
+                <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Core Capabilities</span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Our Services Spec</h2>
+                <p className="text-sm text-zinc-400">Crafting deliberate digital touchpoints. We turn standard advertising assets into emotional cinematic experiences.</p>
+              </div>
+              
+              {/* Estimate package navigation shortcut */}
+              <button
+                 onClick={() => scrollToSection('estimator')}
+                 className="flex items-center gap-2 text-[10px] font-mono tracking-widest text-white hover:text-zinc-400 transition-all uppercase self-start group cursor-pointer"
               >
-                {/* Decorative index indicator absolute top */}
-                <div className="absolute top-6 right-8 text-2xl font-serif italic text-zinc-800 group-hover:text-white/10 transition-colors pointer-events-none">
-                  0{idx + 1}
-                </div>
+                Interactive Estimator
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </motion.div>
 
-                <div className="space-y-4">
-                  <div className="inline-block px-3 py-1 bg-zinc-900/60 border border-white/10 rounded-none text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
-                    {service.metric}
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-serif text-white group-hover:text-zinc-200 transition-colors">{service.title}</h3>
-                  <p className="text-sm text-zinc-405 leading-relaxed max-w-lg">{service.description}</p>
-                </div>
+            {/* Services Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+              {(servicesData.length > 0 ? servicesData : SERVICES_DATA)
+                .filter(srv => !srv.hidden)
+                .map((service, idx) => (
+                  <motion.div
+                    key={service.id}
+                    variants={fadeInUpVariants}
+                    className="group relative bg-[#0a0a0a] border border-white/10 p-8 md:p-10 rounded-none transition-all duration-300 flex flex-col justify-between overflow-hidden hover:border-white/30"
+                  >
+                    {/* Decorative index indicator absolute top */}
+                    <div className="absolute top-6 right-8 text-2xl font-serif italic text-zinc-800 group-hover:text-white/10 transition-colors pointer-events-none">
+                      0{idx + 1}
+                    </div>
 
-                {/* Bullets */}
-                <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
-                  <span className="text-[9px] font-mono tracking-[0.15em] text-zinc-500 uppercase block">SPECIFICATIONS</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {service.features.map((feat, fIdx) => (
-                      <div key={fIdx} className="flex items-center text-xs text-zinc-300 font-sans gap-2">
-                        <span className="w-1.5 h-1.5 bg-white" />
-                        {feat}
+                    <div className="space-y-4">
+                      <div className="inline-block px-3 py-1 bg-zinc-900/60 border border-white/10 rounded-none text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+                        {service.metric}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <h3 className="text-xl sm:text-2xl font-serif text-white group-hover:text-zinc-200 transition-colors">{service.title}</h3>
+                      <p className="text-sm text-zinc-405 leading-relaxed max-w-lg">{service.description}</p>
+                    </div>
 
-              </motion.div>
-            ))}
+                    {/* Bullets */}
+                    <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
+                      <span className="text-[9px] font-mono tracking-[0.15em] text-zinc-500 uppercase block">SPECIFICATIONS</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {service.features.map((feat, fIdx) => (
+                          <div key={fIdx} className="flex items-center text-xs text-zinc-300 font-sans gap-2">
+                            <span className="w-1.5 h-1.5 bg-white" />
+                            {feat}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </motion.div>
+                ))}
+            </div>
+
           </div>
-
-        </div>
-      </motion.section>
+        </motion.section>
+      )}
 
       {/* 4. DYNAMIC INTERACTIVE ESTIMATOR & CAMPAIGN BUILDER (Requested Action flow) */}
-      <motion.section 
-        id="estimator" 
-        className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden border-b border-white/10"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div className="max-w-4xl mx-auto space-y-12 relative z-10">
-          <div className="text-center space-y-4 max-w-xl mx-auto">
-            <span className="text-[10px] font-mono tracking-[0.2em] text-white border border-white/10 px-3 py-1 rounded-none uppercase bg-zinc-900/60">Configurator Toolkit</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Campaign Brief & Budget Builder</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              We trust in perfect clarity. Select your creative deliverables, production scale, and schedule density below to outline an immediate investment roadmap tailored for your brand.
-            </p>
-          </div>
+      {(!sectionVisibility || sectionVisibility.estimator) && (
+        <motion.section 
+          id="estimator" 
+          className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden border-b border-white/10"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="max-w-4xl mx-auto space-y-12 relative z-10">
+            <div className="text-center space-y-4 max-w-xl mx-auto">
+              <span className="text-[10px] font-mono tracking-[0.2em] text-white border border-white/10 px-3 py-1 rounded-none uppercase bg-zinc-900/60">Configurator Toolkit</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Campaign Brief & Budget Builder</h2>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                We trust in perfect clarity. Select your creative deliverables, production scale, and schedule density below to outline an immediate investment roadmap tailored for your brand.
+              </p>
+            </div>
 
-          <CampaignEstimator onIntegrate={handleEstimatorIntegration} />
-        </div>
-      </motion.section>
+            <CampaignEstimator onIntegrate={handleEstimatorIntegration} />
+          </div>
+        </motion.section>
+      )}
 
       {/* 5. WHY CHOOSE US SECTION */}
-      <motion.section 
-        id="why-us" 
-        className="py-24 md:py-32 bg-[#060606] px-6 md:px-12 relative"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={staggerContainer}
-      >
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          
-          {/* Why Choose Us Sticky Left Column */}
-          <motion.div variants={fadeInUpVariants} className="lg:col-span-4 space-y-4">
-            <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase block">Aesthetic Standards</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Why Select Our Vision</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              We stand apart in India's advertising landscape because we respect physical texture, raw lighting, and timeless storytelling structures. No plastic green screens. Pure authentic visual craftsmanship.
-            </p>
+      {(!sectionVisibility || sectionVisibility.whyUs) && (
+        <motion.section 
+          id="why-us" 
+          className="py-24 md:py-32 bg-[#060606] px-6 md:px-12 relative"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={staggerContainer}
+        >
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             
-            {/* Instagram promotion link info */}
-            <div className="p-5 bg-[#0a0a0a] border border-white/10 rounded-none mt-6 space-y-2">
-              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Digital Native Verification</span>
-              <div className="flex items-center gap-2">
-                <Instagram className="w-4 h-4 text-white" />
-                <span className="text-xs font-semibold text-white">@thephotoblog.india.1</span>
+            {/* Why Choose Us Sticky Left Column */}
+            <motion.div variants={fadeInUpVariants} className="lg:col-span-4 space-y-4">
+              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase block">Aesthetic Standards</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Why Select Our Vision</h2>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                We stand apart in India's advertising landscape because we respect physical texture, raw lighting, and timeless storytelling structures. No plastic green screens. Pure authentic visual craftsmanship.
+              </p>
+              
+              {/* Instagram promotion link info */}
+              <div className="p-5 bg-[#0a0a0a] border border-white/10 rounded-none mt-6 space-y-2">
+                <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Digital Native Verification</span>
+                <div className="flex items-center gap-2">
+                  <Instagram className="w-4 h-4 text-white" />
+                  <span className="text-xs font-semibold text-white">@thephotoblog.india.1</span>
+                </div>
+                <p className="text-[11px] text-zinc-505 leading-normal font-sans">Our organic cinematic portfolio serves over millions of visual impressions organically.</p>
               </div>
-              <p className="text-[11px] text-zinc-505 leading-normal font-sans">Our organic cinematic portfolio serves over millions of visual impressions organically.</p>
+            </motion.div>
+
+            {/* Staggered features grid */}
+            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {(whyChooseUsData.length > 0 ? whyChooseUsData : WHY_CHOOSE_US_DATA)
+                .filter(item => !(item as any).hidden)
+                .map((item) => {
+                  // Custom map icons to visual elements
+                  const getIcon = (name: string) => {
+                    switch(name) {
+                      case 'Film': return <Film className="w-5 h-5 text-white" />;
+                      case 'Sparkles': return <Sparkles className="w-5 h-5 text-white" />;
+                      case 'Clock': return <Clock className="w-5 h-5 text-white" />;
+                      case 'ShieldCheck': return <ShieldCheck className="w-5 h-5 text-white" />;
+                      case 'Zap': return <Zap className="w-5 h-5 text-white" />;
+                      case 'Camera': return <Camera className="w-5 h-5 text-white" />;
+                      case 'Award': return <Award className="w-5 h-5 text-white" />;
+                      case 'Heart': return <Heart className="w-5 h-5 text-white" />;
+                      case 'Shield': return <Shield className="w-5 h-5 text-white" />;
+                      default: return <Sparkles className="w-5 h-5 text-white" />;
+                    }
+                  };
+
+                  return (
+                    <motion.div
+                      key={item.id}
+                      variants={fadeInUpVariants}
+                      className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-none transition-all hover:border-white/30"
+                    >
+                      <div className="w-10 h-10 rounded-none bg-zinc-900 flex items-center justify-center border border-white/10">
+                        {getIcon(item.iconName)}
+                      </div>
+                      <h3 className="text-lg font-serif text-white mt-4">{item.title}</h3>
+                      <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{item.description}</p>
+                    </motion.div>
+                  );
+                })}
             </div>
-          </motion.div>
 
-          {/* Staggered features grid */}
-          <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {WHY_CHOOSE_US_DATA.map((item) => {
-              // Custom map icons to visual elements
-              const getIcon = (name: string) => {
-                switch(name) {
-                  case 'Film': return <Film className="w-5 h-5 text-white" />;
-                  case 'Sparkles': return <Sparkles className="w-5 h-5 text-white" />;
-                  case 'Clock': return <Clock className="w-5 h-5 text-white" />;
-                  case 'ShieldCheck': return <ShieldCheck className="w-5 h-5 text-white" />;
-                  default: return <Sparkles className="w-5 h-5 text-white" />;
-                }
-              };
+          </div>
+        </motion.section>
+      )}
 
-              return (
+      {/* 6. CLIENT TESTIMONIALS SECTION */}
+      {(!sectionVisibility || sectionVisibility.testimonials) && (
+        <motion.section 
+          className="py-24 md:py-32 bg-black border-y border-white/10 px-6 md:px-12 relative overflow-hidden"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Subtle camera frame bounds */}
+          <div className="absolute top-4 left-4 text-[9px] font-mono text-zinc-700">[REC AUDIO MONO ACTIVE]</div>
+          <div className="absolute bottom-4 right-4 text-[9px] font-mono text-zinc-700">[CLIENT TESTIMONY PREVIEW]</div>
+
+          <div className="max-w-4xl mx-auto space-y-12 text-center relative z-10">
+            <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Director Endorsements</span>
+
+            {/* Slider content */}
+            <div className="relative min-h-[220px] flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                {((testimonialsData && testimonialsData.length > 0) ? testimonialsData : TESTIMONIALS_DATA)
+                  .filter(t => !t.hidden)
+                  .map((t, idx, arr) => (
+                    idx === (activeTestimonial % (arr.length || 1)) && (
+                      <motion.div
+                        key={t.id}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.4 }}
+                        className="space-y-6"
+                      >
+                        <p className="text-lg sm:text-2xl md:text-3xl font-serif text-white italic leading-relaxed max-w-3xl mx-auto">
+                          “{t.quote}”
+                        </p>
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-sans font-medium text-zinc-100">{t.author}</h4>
+                          <p className="text-[10px] font-mono text-zinc-505 uppercase tracking-[0.15em]">
+                            {t.role} — <span className="text-white font-serif italic">{t.brand}</span>
+                          </p>
+                        </div>
+                      </motion.div>
+                    )
+                  ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Indicator Pills */}
+            <div className="flex items-center justify-center gap-3 pt-4">
+              {((testimonialsData && testimonialsData.length > 0) ? testimonialsData : TESTIMONIALS_DATA)
+                .filter(t => !t.hidden)
+                .map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveTestimonial(idx)}
+                    className={`h-1 transition-all cursor-pointer rounded-none ${
+                      (activeTestimonial % (((testimonialsData && testimonialsData.length > 0) ? testimonialsData : TESTIMONIALS_DATA).filter(t => !t.hidden).length || 1)) === idx ? 'w-8 bg-white' : 'w-2 bg-zinc-800 hover:bg-zinc-700'
+                    }`}
+                  />
+                ))}
+            </div>
+
+          </div>
+        </motion.section>
+      )}
+
+      {/* 7. LATEST PORTFOLIO COLLABS GRID */}
+      {(!sectionVisibility || sectionVisibility.portfolio) && (
+        <motion.section 
+          id="portfolio" 
+          className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 border-b border-white/10"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={staggerContainer}
+        >
+          <div className="max-w-7xl mx-auto space-y-16">
+            
+            {/* Header */}
+            <motion.div variants={fadeInUpVariants} className="text-center space-y-4 max-w-xl mx-auto">
+              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Cinematic Proof</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Brand Partnerships & Campaigns</h2>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                We collaborate with luxury labels to co-direct high-retention digital visual features. Explore our latest custom projects across India and international outlets.
+              </p>
+            </motion.div>
+  
+            {/* Portfolio Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {portfolioItems.map((item) => (
                 <motion.div
                   key={item.id}
                   variants={fadeInUpVariants}
-                  className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-none transition-all hover:border-white/30"
+                  className="group relative bg-[#0a0a0a] border border-white/10 rounded-none overflow-hidden hover:border-white/30 transition-all duration-300"
                 >
-                  <div className="w-10 h-10 rounded-none bg-zinc-900 flex items-center justify-center border border-white/10">
-                    {getIcon(item.iconName)}
-                  </div>
-                  <h3 className="text-lg font-serif text-white mt-4">{item.title}</h3>
-                  <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{item.description}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-
-        </div>
-      </motion.section>
-
-      {/* 6. CLIENT TESTIMONIALS SECTION */}
-      <motion.section 
-        className="py-24 md:py-32 bg-black border-y border-white/10 px-6 md:px-12 relative overflow-hidden"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {/* Subtle camera frame bounds */}
-        <div className="absolute top-4 left-4 text-[9px] font-mono text-zinc-700">[REC AUDIO MONO ACTIVE]</div>
-        <div className="absolute bottom-4 right-4 text-[9px] font-mono text-zinc-700">[CLIENT TESTIMONY PREVIEW]</div>
-
-        <div className="max-w-4xl mx-auto space-y-12 text-center relative z-10">
-          <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Director Endorsements</span>
-
-          {/* Slider content */}
-          <div className="relative min-h-[220px] flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              {TESTIMONIALS_DATA.map((t, idx) => (
-                idx === activeTestimonial && (
-                  <motion.div
-                    key={t.id}
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.4 }}
-                    className="space-y-6"
+                  {/* Image layout container */}
+                  <div 
+                    className="aspect-[16/10] overflow-hidden relative cursor-pointer group/img"
+                    onClick={() => setSelectedPortfolioItem(item)}
                   >
-                    <p className="text-lg sm:text-2xl md:text-3xl font-serif text-white italic leading-relaxed max-w-3xl mx-auto">
-                      “{t.quote}”
-                    </p>
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                    
+                    {/* Luxury editorial hover cue overlay */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                      <div className="border border-white/20 bg-black/70 px-4 py-2 text-[10px] uppercase font-mono tracking-[0.2em] text-white">
+                        Inspect Frame ✦
+                      </div>
+                    </div>
+                    
+                    {/* Category Pill floating top */}
+                    <div className="absolute top-4 left-4 bg-black/90 px-3 py-1 rounded-none border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 uppercase z-10">
+                      {item.category}
+                    </div>
+  
+                    {/* Impact text indicator floating bottom right */}
+                    <div className="absolute bottom-4 right-4 bg-white text-black px-2.5 py-1 rounded-none font-mono font-medium text-[9px] tracking-wider uppercase z-10">
+                      {item.impact}
+                    </div>
+                  </div>
+  
+                  <div className="p-6 flex items-center justify-between">
                     <div className="space-y-1">
-                      <h4 className="text-sm font-sans font-medium text-zinc-100">{t.author}</h4>
-                      <p className="text-[10px] font-mono text-zinc-505 uppercase tracking-[0.15em]">
-                        {t.role} — <span className="text-white font-serif italic">{t.brand}</span>
-                      </p>
+                      <span className="text-[9px] font-mono text-zinc-505 uppercase tracking-widest">CLIENT — {item.client}</span>
+                      <h3 className="text-lg font-serif text-white font-medium">{item.title}</h3>
                     </div>
-                  </motion.div>
-                )
+                    <div className="text-right">
+                      <span className="text-xs font-mono text-zinc-500">{item.year}</span>
+                    </div>
+                  </div>
+  
+                </motion.div>
               ))}
-            </AnimatePresence>
+            </div>
+  
           </div>
-
-          {/* Indicator Pills */}
-          <div className="flex items-center justify-center gap-3 pt-4">
-            {TESTIMONIALS_DATA.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveTestimonial(idx)}
-                className={`h-1 transition-all cursor-pointer rounded-none ${
-                  activeTestimonial === idx ? 'w-8 bg-white' : 'w-2 bg-zinc-800 hover:bg-zinc-700'
-                }`}
-              />
-            ))}
-          </div>
-
-        </div>
-      </motion.section>
-
-      {/* 7. LATEST PORTFOLIO COLLABS GRID */}
-      <motion.section 
-        id="portfolio" 
-        className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 border-b border-white/10"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={staggerContainer}
-      >
-        <div className="max-w-7xl mx-auto space-y-16">
-          
-          {/* Header */}
-          <motion.div variants={fadeInUpVariants} className="text-center space-y-4 max-w-xl mx-auto">
-            <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Cinematic Proof</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Brand Partnerships & Campaigns</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              We collaborate with luxury labels to co-direct high-retention digital visual features. Explore our latest custom projects across India and international outlets.
-            </p>
-          </motion.div>
-
-          {/* Portfolio Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {portfolioItems.map((item) => (
-              <motion.div
-                key={item.id}
-                variants={fadeInUpVariants}
-                className="group relative bg-[#0a0a0a] border border-white/10 rounded-none overflow-hidden hover:border-white/30 transition-all duration-300"
-              >
-                {/* Image layout container */}
-                <div 
-                  className="aspect-[16/10] overflow-hidden relative cursor-pointer group/img"
-                  onClick={() => setSelectedPortfolioItem(item)}
-                >
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-700"
-                    referrerPolicy="no-referrer"
-                  />
-                  
-                  {/* Luxury editorial hover cue overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                    <div className="border border-white/20 bg-black/70 px-4 py-2 text-[10px] uppercase font-mono tracking-[0.2em] text-white">
-                      Inspect Frame ✦
-                    </div>
-                  </div>
-                  
-                  {/* Category Pill floating top */}
-                  <div className="absolute top-4 left-4 bg-black/90 px-3 py-1 rounded-none border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 uppercase z-10">
-                    {item.category}
-                  </div>
-
-                  {/* Impact text indicator floating bottom right */}
-                  <div className="absolute bottom-4 right-4 bg-white text-black px-2.5 py-1 rounded-none font-mono font-medium text-[9px] tracking-wider uppercase z-10">
-                    {item.impact}
-                  </div>
-                </div>
-
-                <div className="p-6 flex items-center justify-between">
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-mono text-zinc-505 uppercase tracking-widest">CLIENT — {item.client}</span>
-                    <h3 className="text-lg font-serif text-white font-medium">{item.title}</h3>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-mono text-zinc-500">{item.year}</span>
-                  </div>
-                </div>
-
-              </motion.div>
-            ))}
-          </div>
-
-        </div>
-      </motion.section>
+        </motion.section>
+      )}
 
       {/* 8. INSTAGRAM showcase SECTION (Required explicitly in request) */}
-      <motion.section 
-        id="instagram" 
-        className="py-24 bg-black px-6 md:px-12 relative border-b border-white/10"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div className="max-w-7xl mx-auto space-y-12">
-          
-          <div className="text-center space-y-4 max-w-xl mx-auto">
-            <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Digital Feed</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Cinematic Instagram Portfolio</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Find our latest daily loops, fine-cut vertical stories, and real-time behind-the-scenes visual experiments live on our digital handle.
-            </p>
+      {(!sectionVisibility || sectionVisibility.feed) && (
+        <motion.section 
+          id="instagram" 
+          className="py-24 bg-black px-6 md:px-12 relative border-b border-white/10"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="max-w-7xl mx-auto space-y-12">
+            
+            <div className="text-center space-y-4 max-w-xl mx-auto">
+              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Digital Feed</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Cinematic Instagram Portfolio</h2>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Find our latest daily loops, fine-cut vertical stories, and real-time behind-the-scenes visual experiments live on our digital handle.
+              </p>
+            </div>
+  
+            <InstagramGrid />
           </div>
-
-          <InstagramGrid />
-        </div>
-      </motion.section>
+        </motion.section>
+      )}
 
       {/* 9. CONTACT CTA SECTION */}
-      <motion.section 
-        id="contact" 
-        className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 border-t border-white/10 relative"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-      >
+      {(!sectionVisibility || sectionVisibility.contact) && (
+        <motion.section 
+          id="contact" 
+          className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 border-t border-white/10 relative"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        >
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           
           {/* Contact Details left */}
@@ -921,10 +1110,13 @@ export default function App() {
             </div>
 
             {/* REPLICATED WHATSAPP BUSINESS CARD FROM USER MOCKUP */}
-            <WhatsAppProfileCard 
-              onImageClick={(item) => setSelectedPortfolioItem(item)}
-              portfolioItems={PORTFOLIO_DATA}
-            />
+            {(!sectionVisibility || sectionVisibility.whatsapp) && (
+              <WhatsAppProfileCard 
+                onImageClick={(item) => setSelectedPortfolioItem(item)}
+                portfolioItems={PORTFOLIO_DATA}
+                config={whatsAppConfig}
+              />
+            )}
 
             <div className="space-y-3 pt-4 border-t border-white/10">
               <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest block">Alternate Hotline</span>
@@ -1010,35 +1202,20 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Service selection */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Direct Service of Interest</label>
-                      <select
-                        name="serviceOfInterest"
-                        value={formData.serviceOfInterest}
-                        onChange={handleInputChange}
-                        className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all"
-                      >
-                        <option value="Cinematic Brand Campaigns">Cinematic Brand Campaigns</option>
-                        <option value="Premium Editorial Photography">Premium Editorial Photography</option>
-                        <option value="High-Impact Social Video">High-Impact Social Video</option>
-                        <option value="Elite Influencer Collabs">Elite Influencer Collabs</option>
-                      </select>
-                    </div>
-
-                    {/* Budget Estimation indicator */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Estimated Budget Stream</label>
-                      <input
-                        type="text"
-                        name="estimatedBudget"
-                        value={formData.estimatedBudget}
-                        onChange={handleInputChange}
-                        placeholder="e.g. ₹2,00,000 - ₹4,00,000"
-                        className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all font-mono placeholder:text-zinc-650"
-                      />
-                    </div>
+                  {/* Service selection */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Direct Service of Interest</label>
+                    <select
+                      name="serviceOfInterest"
+                      value={formData.serviceOfInterest}
+                      onChange={handleInputChange}
+                      className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all"
+                    >
+                      <option value="Cinematic Brand Campaigns">Cinematic Brand Campaigns</option>
+                      <option value="Premium Editorial Photography">Premium Editorial Photography</option>
+                      <option value="High-Impact Social Video">High-Impact Social Video</option>
+                      <option value="Elite Influencer Collabs">Elite Influencer Collabs</option>
+                    </select>
                   </div>
 
                   {/* Project description brief */}
@@ -1127,7 +1304,7 @@ export default function App() {
                           phone: '',
                           companyName: '',
                           serviceOfInterest: 'Cinematic Brand Campaigns',
-                          estimatedBudget: '₹1,50,050 - ₹2,35,000',
+                          estimatedBudget: 'Bespoke Quote Upon Evaluation',
                           projectMessage: ''
                         });
                       }}
@@ -1154,6 +1331,7 @@ export default function App() {
 
         </div>
       </motion.section>
+      )}
 
       {/* 10. ELITE FOOTER */}
       <footer className="bg-black border-t border-white/10 py-16 px-6 md:px-12 text-zinc-400 relative z-30 font-mono">
@@ -1239,7 +1417,7 @@ export default function App() {
               <span>THE PHOTO BLOG.INDIA ✦ CASE PORTFOLIO</span>
               <span>FRAME {portfolioItems.findIndex(item => item.id === selectedPortfolioItem.id) + 1} / {portfolioItems.length}</span>
               <button 
-                onClick={() => setSelectedPortfolioItem(null)}
+                onClick={handleCloseLightbox}
                 className="flex items-center gap-1.5 text-white hover:text-zinc-300 transition-colors cursor-pointer text-xs"
               >
                 CLOSE [ESC] <X className="w-4 h-4" />
@@ -1304,7 +1482,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-white/10">
+                <div className="pt-6 border-t border-white/10 space-y-3">
                   <button
                     onClick={() => {
                       handleEstimatorIntegration(
@@ -1312,11 +1490,28 @@ export default function App() {
                         selectedPortfolioItem.category,
                         "Custom Collab Budget"
                       );
-                      setSelectedPortfolioItem(null);
+                      handleCloseLightbox();
                     }}
                     className="w-full bg-white hover:bg-zinc-200 text-black py-3 px-4 font-mono font-bold text-[10px] tracking-widest uppercase transition-all rounded-none cursor-pointer flex items-center justify-center gap-2"
                   >
                     Inquire On Collab <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={handleSharePortfolio}
+                    className="w-full border border-white/10 hover:border-white/30 text-zinc-300 hover:text-white hover:bg-white/5 py-3 px-4 font-mono font-bold text-[10px] tracking-widest uppercase transition-all rounded-none cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Link Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>Share Portfolio Item</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

@@ -9,6 +9,7 @@ export interface Service {
   description: string;
   metric: string;
   features: string[];
+  hidden?: boolean;
 }
 
 export interface WhyChooseUsItem {
@@ -16,6 +17,7 @@ export interface WhyChooseUsItem {
   title: string;
   description: string;
   iconName: string;
+  hidden?: boolean;
 }
 
 export interface Testimonial {
@@ -25,6 +27,7 @@ export interface Testimonial {
   role: string;
   brand: string;
   rating: number;
+  hidden?: boolean;
 }
 
 export interface PortfolioItem {

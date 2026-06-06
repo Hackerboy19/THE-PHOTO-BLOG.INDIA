@@ -11,7 +11,8 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { PortfolioItem } from '../types';
+import { PortfolioItem, Service, WhyChooseUsItem, Testimonial } from '../types';
+import { SERVICES_DATA, WHY_CHOOSE_US_DATA, TESTIMONIALS_DATA } from '../data';
 
 export enum OperationType {
   CREATE = 'create',
@@ -301,6 +302,355 @@ export async function deletePortfolioItem(id: string): Promise<void> {
       await deleteDoc(doc(db, 'portfolio', id));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, path);
+    }
+  }
+}
+
+// ==========================================
+// NEW EXTENDED SITE CONTROL CONFIGS & ENDPOINTS
+// ==========================================
+
+export interface AboutSettings {
+  backstory: string;
+  shutter: string;
+  iso: string;
+  aperture: string;
+  aboutImage: string;
+}
+
+export interface WhatsAppConfig {
+  slogan: string;
+  quote: string;
+  hours: string;
+  followers: string;
+  phone: string;
+}
+
+export interface SectionVisibilitySettings {
+  about: boolean;
+  services: boolean;
+  estimator: boolean;
+  whyUs: boolean;
+  portfolio: boolean;
+  testimonials: boolean;
+  feed: boolean;
+  whatsapp: boolean;
+  contact: boolean;
+}
+
+const DEFAULT_ABOUT: AboutSettings = {
+  backstory: "THE PHOTO BLOG.INDIA is a high-end digital marketing and cinematic media house. We direct premium film campaigns, brand collaborations, and high-fidelity visuals that compel eyes and capture market trust.",
+  shutter: "1/250",
+  iso: "100",
+  aperture: "f/1.4",
+  aboutImage: "https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&q=80&w=800"
+};
+
+const DEFAULT_WHATSAPP_CONFIG: WhatsAppConfig = {
+  slogan: "We are a new-age marketing agency providing social media management, performance marketing, branding & identity.",
+  quote: "We thrive to turn your brand into a story which the digital media remembers.",
+  hours: "10:00 am – 6:00 pm",
+  followers: "38K Followers",
+  phone: "9145961226"
+};
+
+const DEFAULT_VISIBILITY: SectionVisibilitySettings = {
+  about: true,
+  services: true,
+  estimator: true,
+  whyUs: true,
+  portfolio: true,
+  testimonials: true,
+  feed: true,
+  whatsapp: true,
+  contact: true
+};
+
+const KEY_ABOUT = "tpb_settings_about";
+const KEY_SERVICES = "tpb_settings_services";
+const KEY_WHYUS = "tpb_settings_whyus";
+const KEY_TESTIMONIALS = "tpb_settings_testimonials";
+const KEY_WHATSAPP = "tpb_settings_whatsapp";
+const KEY_VISIBILITY = "tpb_settings_visibility";
+
+// --- ABOUT DATA ENDPOINTS ---
+export async function getAboutSettings(): Promise<AboutSettings> {
+  if (isFirebaseActive && db) {
+    try {
+      const snap = await getDoc(doc(db, 'settings', 'about'));
+      if (snap.exists()) {
+        return { ...DEFAULT_ABOUT, ...snap.data() } as AboutSettings;
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, 'settings/about');
+    }
+  }
+  const local = localStorage.getItem(KEY_ABOUT);
+  if (local) {
+    try { return { ...DEFAULT_ABOUT, ...JSON.parse(local) }; } catch (_) {}
+  }
+  return DEFAULT_ABOUT;
+}
+
+export async function saveAboutSettings(data: AboutSettings): Promise<void> {
+  localStorage.setItem(KEY_ABOUT, JSON.stringify(data));
+  if (isFirebaseActive && db) {
+    try {
+      await setDoc(doc(db, 'settings', 'about'), data);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'settings/about');
+    }
+  }
+}
+
+// --- SERVICES ENDPOINTS ---
+export async function getServices(): Promise<Service[]> {
+  if (isFirebaseActive && db) {
+    try {
+      const snap = await getDocs(collection(db, 'services'));
+      const list: Service[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...d.data() } as Service);
+      });
+      if (list.length > 0) return list;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.LIST, 'services');
+    }
+  }
+  const local = localStorage.getItem(KEY_SERVICES);
+  if (local) {
+    try { return JSON.parse(local); } catch (_) {}
+  }
+  return [...SERVICES_DATA];
+}
+
+export async function saveService(item: Service): Promise<void> {
+  const all = await getServices();
+  const index = all.findIndex((x) => x.id === item.id);
+  if (index >= 0) all[index] = item;
+  else all.push(item);
+  localStorage.setItem(KEY_SERVICES, JSON.stringify(all));
+
+  if (isFirebaseActive && db) {
+    try {
+      await setDoc(doc(db, 'services', item.id), item);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `services/${item.id}`);
+    }
+  }
+}
+
+export async function saveAllServices(items: Service[]): Promise<void> {
+  localStorage.setItem(KEY_SERVICES, JSON.stringify(items));
+  if (isFirebaseActive && db) {
+    for (const item of items) {
+      try {
+        await setDoc(doc(db, 'services', item.id), item);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `services/${item.id}`);
+      }
+    }
+  }
+}
+
+export async function deleteService(id: string): Promise<void> {
+  const all = await getServices();
+  const filtered = all.filter((x) => x.id !== id);
+  localStorage.setItem(KEY_SERVICES, JSON.stringify(filtered));
+
+  if (isFirebaseActive && db) {
+    try {
+      await deleteDoc(doc(db, 'services', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `services/${id}`);
+    }
+  }
+}
+
+// --- WHY CHOOSE US ENDPOINTS ---
+export async function getWhyChooseUs(): Promise<WhyChooseUsItem[]> {
+  if (isFirebaseActive && db) {
+    try {
+      const snap = await getDocs(collection(db, 'whyUs'));
+      const list: WhyChooseUsItem[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...d.data() } as WhyChooseUsItem);
+      });
+      if (list.length > 0) return list;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.LIST, 'whyUs');
+    }
+  }
+  const local = localStorage.getItem(KEY_WHYUS);
+  if (local) {
+    try { return JSON.parse(local); } catch (_) {}
+  }
+  return [...WHY_CHOOSE_US_DATA];
+}
+
+export async function saveWhyChooseUsItem(item: WhyChooseUsItem): Promise<void> {
+  const all = await getWhyChooseUs();
+  const index = all.findIndex((x) => x.id === item.id);
+  if (index >= 0) all[index] = item;
+  else all.push(item);
+  localStorage.setItem(KEY_WHYUS, JSON.stringify(all));
+
+  if (isFirebaseActive && db) {
+    try {
+      await setDoc(doc(db, 'whyUs', item.id), item);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `whyUs/${item.id}`);
+    }
+  }
+}
+
+export async function saveAllWhyChooseUs(items: WhyChooseUsItem[]): Promise<void> {
+  localStorage.setItem(KEY_WHYUS, JSON.stringify(items));
+  if (isFirebaseActive && db) {
+    for (const item of items) {
+      try {
+        await setDoc(doc(db, 'whyUs', item.id), item);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `whyUs/${item.id}`);
+      }
+    }
+  }
+}
+
+export async function deleteWhyChooseUsItem(id: string): Promise<void> {
+  const all = await getWhyChooseUs();
+  const filtered = all.filter((x) => x.id !== id);
+  localStorage.setItem(KEY_WHYUS, JSON.stringify(filtered));
+
+  if (isFirebaseActive && db) {
+    try {
+      await deleteDoc(doc(db, 'whyUs', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `whyUs/${id}`);
+    }
+  }
+}
+
+// --- TESTIMONIALS ENDPOINTS ---
+export async function getTestimonials(): Promise<Testimonial[]> {
+  if (isFirebaseActive && db) {
+    try {
+      const snap = await getDocs(collection(db, 'testimonials'));
+      const list: Testimonial[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...d.data() } as Testimonial);
+      });
+      if (list.length > 0) return list;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.LIST, 'testimonials');
+    }
+  }
+  const local = localStorage.getItem(KEY_TESTIMONIALS);
+  if (local) {
+    try { return JSON.parse(local); } catch (_) {}
+  }
+  return [...TESTIMONIALS_DATA];
+}
+
+export async function saveTestimonial(item: Testimonial): Promise<void> {
+  const all = await getTestimonials();
+  const index = all.findIndex((x) => x.id === item.id);
+  if (index >= 0) all[index] = item;
+  else all.push(item);
+  localStorage.setItem(KEY_TESTIMONIALS, JSON.stringify(all));
+
+  if (isFirebaseActive && db) {
+    try {
+      await setDoc(doc(db, 'testimonials', item.id), item);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `testimonials/${item.id}`);
+    }
+  }
+}
+
+export async function saveAllTestimonials(items: Testimonial[]): Promise<void> {
+  localStorage.setItem(KEY_TESTIMONIALS, JSON.stringify(items));
+  if (isFirebaseActive && db) {
+    for (const item of items) {
+      try {
+        await setDoc(doc(db, 'testimonials', item.id), item);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `testimonials/${item.id}`);
+      }
+    }
+  }
+}
+
+export async function deleteTestimonial(id: string): Promise<void> {
+  const all = await getTestimonials();
+  const filtered = all.filter((x) => x.id !== id);
+  localStorage.setItem(KEY_TESTIMONIALS, JSON.stringify(filtered));
+
+  if (isFirebaseActive && db) {
+    try {
+      await deleteDoc(doc(db, 'testimonials', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `testimonials/${id}`);
+    }
+  }
+}
+
+// --- WHATSAPP CONFIG ENDPOINTS ---
+export async function getWhatsAppConfig(): Promise<WhatsAppConfig> {
+  if (isFirebaseActive && db) {
+    try {
+      const snap = await getDoc(doc(db, 'settings', 'whatsapp'));
+      if (snap.exists()) {
+        return { ...DEFAULT_WHATSAPP_CONFIG, ...snap.data() } as WhatsAppConfig;
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, 'settings/whatsapp');
+    }
+  }
+  const local = localStorage.getItem(KEY_WHATSAPP);
+  if (local) {
+    try { return { ...DEFAULT_WHATSAPP_CONFIG, ...JSON.parse(local) }; } catch (_) {}
+  }
+  return DEFAULT_WHATSAPP_CONFIG;
+}
+
+export async function saveWhatsAppConfig(data: WhatsAppConfig): Promise<void> {
+  localStorage.setItem(KEY_WHATSAPP, JSON.stringify(data));
+  if (isFirebaseActive && db) {
+    try {
+      await setDoc(doc(db, 'settings', 'whatsapp'), data);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'settings/whatsapp');
+    }
+  }
+}
+
+// --- VISIBILITY DATA ENDPOINTS ---
+export async function getSectionVisibility(): Promise<SectionVisibilitySettings> {
+  if (isFirebaseActive && db) {
+    try {
+      const snap = await getDoc(doc(db, 'settings', 'visibility'));
+      if (snap.exists()) {
+        return { ...DEFAULT_VISIBILITY, ...snap.data() } as SectionVisibilitySettings;
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, 'settings/visibility');
+    }
+  }
+  const local = localStorage.getItem(KEY_VISIBILITY);
+  if (local) {
+    try { return { ...DEFAULT_VISIBILITY, ...JSON.parse(local) }; } catch (_) {}
+  }
+  return DEFAULT_VISIBILITY;
+}
+
+export async function saveSectionVisibility(data: SectionVisibilitySettings): Promise<void> {
+  localStorage.setItem(KEY_VISIBILITY, JSON.stringify(data));
+  if (isFirebaseActive && db) {
+    try {
+      await setDoc(doc(db, 'settings', 'visibility'), data);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'settings/visibility');
     }
   }
 }

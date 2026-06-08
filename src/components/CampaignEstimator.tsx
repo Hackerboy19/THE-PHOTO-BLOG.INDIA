@@ -4,8 +4,10 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Sparkles, Video, Camera, Compass, Users, CheckCircle, ArrowRight } from 'lucide-react';
+import { Sparkles, Video, Camera, Compass, Users, CheckCircle, ArrowRight, Printer, X, FileText, Share2, Phone } from 'lucide-react';
 import { getEstimatorConfig, EstimatorSettings } from '../lib/firebase';
+import { usePriceCalculator } from '../hooks/usePriceCalculator';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface CampaignEstimatorProps {
   onIntegrate: (summary: string, serviceName: string, budgetEstimate: string) => void;
@@ -16,6 +18,7 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
   const [campaignScale, setCampaignScale] = useState<'boutique' | 'mid' | 'luxury'>('mid');
   const [timeline, setTimeline] = useState<'fast' | 'standard' | 'retainer'>('standard');
   const [estConfig, setEstConfig] = useState<EstimatorSettings | null>(null);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
 
   useEffect(() => {
     async function fetchPricing() {
@@ -53,60 +56,40 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
     });
   };
 
-  const calculatedMetrics = useMemo(() => {
-    let base = 0;
-    selectedServices.forEach(s => {
-      const match = servicesList.find(item => item.id === s);
-      if (match) base += match.basePrice;
-    });
+  const priceStats = usePriceCalculator(
+    estConfig,
+    selectedServices,
+    campaignScale,
+    timeline,
+    100 // Debounce 100ms for smooth transitions
+  );
 
-    // Scale multiplier
-    let scaleMult = 1;
-    let scaleLabel = '';
+  const calculatedMetrics = useMemo(() => {
     let gearSpec = '';
     let crewSize = '';
-
-    const boutiqueMult = estConfig?.scaleMultipliers?.['boutique'] ?? 0.8;
-    const midMult = estConfig?.scaleMultipliers?.['mid'] ?? 1.2;
-    const luxuryMult = estConfig?.scaleMultipliers?.['luxury'] ?? 2.0;
+    let scaleLabel = '';
 
     if (campaignScale === 'boutique') {
-      scaleMult = boutiqueMult;
       scaleLabel = 'Boutique Highlight';
       gearSpec = 'Sony FX6 Cinema Package & Premium Prime Lenses';
       crewSize = '3 Cinematic Creative Specialists';
     } else if (campaignScale === 'mid') {
-      scaleMult = midMult;
       scaleLabel = 'Premium Brand Showcase';
       gearSpec = 'RED V-Raptor / Sony FX9 multicam & G-Master Prime Optics';
       crewSize = '5 Custom Production & Lighting Crew';
     } else {
-      scaleMult = luxuryMult;
       scaleLabel = 'National Digital Takeover';
       gearSpec = 'ARRI Alexa Mini LF / RED Raptor VV, Anamorphic lenses, Full Dolly Setup';
       crewSize = '9+ Creative Director, Master Colorist, Gaffers & Sound Engineer';
     }
 
-    // Timeline modifier
-    const fastMult = estConfig?.timelineMultipliers?.['fast'] ?? 1.25;
-    const standardMult = estConfig?.timelineMultipliers?.['standard'] ?? 1.0;
-    const retainerMult = estConfig?.timelineMultipliers?.['retainer'] ?? 0.9;
-
-    let timeMult = 1.0;
-    if (timeline === 'fast') timeMult = fastMult;
-    if (timeline === 'standard') timeMult = standardMult;
-    if (timeline === 'retainer') timeMult = retainerMult;
-
-    const totalEstimateVal = 0;
-    
     return {
-      range: "Bespoke Quote Upon Evaluation",
       gearSpec,
       crewSize,
       scaleLabel,
-      totalEstimateVal
+      range: priceStats.rangeText,
     };
-  }, [selectedServices, campaignScale, timeline, servicesList, estConfig]);
+  }, [campaignScale, priceStats.rangeText]);
 
   const handleApplyToForm = () => {
     const serviceNames = selectedServices
@@ -119,7 +102,31 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
 
     const summary = `Selected Campaign Elements: ${serviceNames}. Scale: ${scaleText}. Schedule: ${timelineText}. Projected Specs: ${calculatedMetrics.crewSize} using ${calculatedMetrics.gearSpec}.`;
     
-    onIntegrate(summary, serviceNames, "Bespoke Quote Upon Evaluation");
+    onIntegrate(summary, serviceNames, priceStats.rangeText);
+  };
+
+  const handleWhatsAppShare = () => {
+    const selectedLabels = selectedServices
+      .map(s => servicesList.find(item => item.id === s)?.label)
+      .filter(Boolean)
+      .join(', ');
+
+    const scaleText = campaignScale === 'boutique' ? 'Boutique Highlight' : campaignScale === 'mid' ? 'Premium Brand Showcase' : 'National Digital Takeover';
+    const scheduleText = timeline === 'fast' ? 'Rush delivery (< 2 weeks)' : timeline === 'standard' ? 'Standard (4-6 weeks)' : 'Long-term Retainer';
+
+    const text = `Hi Muskan! We just configured a custom photoshoot/videography campaign on your estimator:
+  
+✦ DELIVERABLES: ${selectedLabels}
+✦ DIRECTING SCALE: ${scaleText}
+✦ PRODUCTION WINDOW: ${scheduleText}
+✦ PROJECTED INVESTMENT: ${priceStats.rangeText}
+✦ EXPECTED CREW: ${calculatedMetrics.crewSize}
+✦ EXPECTED CAMERA RIG: ${calculatedMetrics.gearSpec}
+  
+We'd love to lock in our package and schedule an introduction call!`;
+
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/919145961226?text=${encodedText}`, '_blank');
   };
 
   return (
@@ -211,7 +218,16 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
           <div className="space-y-5">
             <div>
               <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-mono block">Project Estimate</span>
-              <div className="text-3xl font-serif text-white tracking-tight mt-1">{calculatedMetrics.range}</div>
+              
+              {/* Animated value rollout */}
+              <motion.div 
+                key={priceStats.rangeText} 
+                initial={{ opacity: 0, y: -4 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                className="text-3xl font-serif text-white tracking-tight mt-1"
+              >
+                {calculatedMetrics.range}
+              </motion.div>
               <p className="text-[11px] text-zinc-500 mt-1">Estimated comprehensive creative investment *</p>
             </div>
 
@@ -244,21 +260,195 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
             </div>
           </div>
 
-          <div className="mt-8 pt-4">
+          <div className="mt-8 pt-4 space-y-2.5">
             <button
               onClick={handleApplyToForm}
-              className="w-full flex items-center justify-center bg-transparent border border-white hover:bg-white hover:text-black text-white py-3 px-4 font-mono text-[10px] tracking-widest uppercase transition-all active:scale-98 cursor-pointer"
+              className="w-full flex items-center justify-center bg-white hover:bg-zinc-200 text-black py-2.5 px-4 font-mono text-[10px] tracking-widest uppercase transition-all active:scale-98 cursor-pointer gap-2"
             >
               Apply to Inquiry Form
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
-            <p className="text-[9px] text-zinc-650 text-center mt-3 leading-normal font-mono uppercase">
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleWhatsAppShare}
+                className="flex items-center justify-center gap-1.5 border border-zinc-800 hover:border-white text-zinc-300 py-2 px-1 text-[9px] uppercase font-mono tracking-wider transition-colors cursor-pointer"
+              >
+                <Phone className="w-3 h-3 text-[#00a884]" /> WhatsApp
+              </button>
+
+              <button
+                onClick={() => setShowQuoteModal(true)}
+                className="flex items-center justify-center gap-1.5 border border-zinc-800 hover:border-white text-zinc-300 py-2 px-1 text-[9px] uppercase font-mono tracking-wider transition-colors cursor-pointer"
+              >
+                <FileText className="w-3 h-3" /> PDF Quote
+              </button>
+            </div>
+
+            <p className="text-[9px] text-zinc-600 text-center mt-3 leading-normal font-mono uppercase">
               * Investment custom evaluated following script selection and directorial layout.
             </p>
           </div>
         </div>
 
       </div>
+
+      {/* PDF CLIENT INVOICE MODAL BACKPLANE */}
+      <AnimatePresence>
+        {showQuoteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            {/* Custom Dynamic Print Stylesheet */}
+            <style dangerouslySetInnerHTML={{__html: `
+              @media print {
+                body * {
+                  visibility: hidden !important;
+                }
+                #thephotoblog-print-sheet, #thephotoblog-print-sheet * {
+                  visibility: visible !important;
+                }
+                #thephotoblog-print-sheet {
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: 100% !important;
+                  background: white !important;
+                  color: black !important;
+                  padding: 40px !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}} />
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-2xl bg-[#09090b] border border-zinc-800 p-6 md:p-8 space-y-6 text-left max-h-[90vh] overflow-y-auto"
+            >
+              <div className="absolute top-4 right-4 no-print">
+                <button 
+                  onClick={() => setShowQuoteModal(false)}
+                  className="p-1 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Printable Area */}
+              <div id="thephotoblog-print-sheet" className="space-y-6 font-mono text-zinc-300">
+                <div className="border-b border-zinc-800 pb-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h1 className="text-xl font-serif text-white italic tracking-wider">THE PHOTO BLOG.INDIA.1</h1>
+                    <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">Premium Visual Syndication & Editorial Production</p>
+                  </div>
+                  <div className="text-right text-[10px] text-zinc-500 space-y-0.5">
+                    <p>DOC-ID: TPBI-{Math.floor(Math.random() * 90000) + 10000}</p>
+                    <p>DATE: {new Date().toLocaleDateString('en-IN', {year: 'numeric', month: 'long', day: 'numeric'})}</p>
+                    <p>HQ: JAIPUR, RAJASTHAN, INDIA</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#050507] border border-zinc-900 p-4 space-y-3">
+                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest border-b border-zinc-900 pb-1.5 font-bold">
+                    Campaign Scope Summary
+                  </div>
+                  <div className="text-xs space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Directing Scale Factor:</span>
+                      <span className="text-white font-bold capitalize">{campaignScale} Scale ({campaignScale === 'boutique' ? 'Boutique' : campaignScale === 'mid' ? 'Premium' : 'Luxury National'})</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Production Schedule:</span>
+                      <span className="text-white font-bold capitalize">{timeline} Timeline</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Crew Deployment:</span>
+                      <span className="text-white font-semibold">{calculatedMetrics.crewSize}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Camera Rig Spec:</span>
+                      <span className="text-white font-semibold">{calculatedMetrics.gearSpec}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-1.5 font-bold">
+                    Itemized Deliverables & Co-Directing Estimates
+                  </div>
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-zinc-900 text-zinc-500 text-left">
+                        <th className="py-2">Component</th>
+                        <th className="py-2 text-right">Baseline Range Estimator</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-950">
+                      {selectedServices.map(sid => {
+                        const sObj = servicesList.find(x => x.id === sid);
+                        if (!sObj) return null;
+                        return (
+                          <tr key={sid} className="text-zinc-300">
+                            <td className="py-2.5">
+                              <span className="text-white font-semibold block">{sObj.label}</span>
+                              <span className="text-[10px] text-zinc-500 font-sans block mt-0.5 leading-none">{sObj.desc}</span>
+                            </td>
+                            <td className="py-2.5 text-right font-mono font-bold align-top">
+                              ${sObj.basePrice.toLocaleString()} Ref USD
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="border-t border-zinc-800 pt-4 flex flex-col items-end space-y-2">
+                  <div className="text-right space-y-1">
+                    <span className="text-[10px] text-zinc-500 block uppercase tracking-wider">PROJECT INVESTMENT PROFILE</span>
+                    <div className="text-2xl font-serif font-bold text-white tracking-tight">{priceStats.rangeText}</div>
+                    <p className="text-[9px] text-[#00a884] uppercase tracking-widest">Converted dynamically from dynamic Daily USD rates (1 USD = ₹{priceStats.exchangeRate.toFixed(2)} INR)</p>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-zinc-900 grid grid-cols-2 gap-4 text-[9px] text-zinc-500 uppercase leading-relaxed font-mono">
+                  <div>
+                    <span className="text-zinc-400 block font-bold mb-1">✦ DIRECTORIAL POLICY</span>
+                    <p>All cinematic elements represent raw baseline budgets. Retainers require signed contracts and script locks prior to crew rollout.</p>
+                  </div>
+                  <div>
+                    <span className="text-zinc-400 block font-bold mb-1">✦ AGENCY SIGNATURE</span>
+                    <p className="mt-2 text-zinc-300 italic font-serif">thephotoblog.india.1 / Muskan</p>
+                    <p className="text-[8px] tracking-widest mt-0.5 font-sans">Campaign Director & Visual Lead</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-zinc-900 flex justify-end gap-3 no-print">
+                <button
+                  onClick={() => setShowQuoteModal(false)}
+                  className="bg-black hover:bg-zinc-900 border border-zinc-800 text-zinc-400 py-2.5 px-6 text-[10px] tracking-widest uppercase font-mono transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    window.print();
+                  }}
+                  className="bg-white hover:bg-zinc-200 text-black py-2.5 px-6 text-[10px] tracking-widest uppercase font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print / Save PDF
+                </button>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

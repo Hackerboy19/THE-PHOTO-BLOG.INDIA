@@ -55,3 +55,9 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

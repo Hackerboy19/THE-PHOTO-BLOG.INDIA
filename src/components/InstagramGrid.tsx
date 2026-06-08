@@ -6,8 +6,14 @@
 import React, { useState } from 'react';
 import { Instagram, Eye, Heart, MessageCircle, ExternalLink, Play, Film, Award } from 'lucide-react';
 import { INSTAGRAM_POSTS } from '../data';
+import { InstagramHandle, validateInstagramHandle } from '../types';
 
-export default function InstagramGrid() {
+interface InstagramGridProps {
+  handle?: InstagramHandle;
+}
+
+export default function InstagramGrid({ handle = '@thephotoblog.india.1' }: InstagramGridProps) {
+  validateInstagramHandle(handle);
   const [activePost, setActivePost] = useState<typeof INSTAGRAM_POSTS[0] | null>(null);
 
   const handlePostClick = (post: typeof INSTAGRAM_POSTS[0]) => {
@@ -23,7 +29,7 @@ export default function InstagramGrid() {
             <div className="w-16 h-16 bg-black flex items-center justify-center overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&q=80&w=150"
-                alt="THE PHOTO BLOG.INDIA"
+                alt="THE PHOTO BLOG.INDIA.1"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -34,7 +40,7 @@ export default function InstagramGrid() {
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-base font-serif italic text-white flex items-center gap-1">@thephotoblog.india.1</h4>
+              <h4 className="text-base font-serif italic text-white flex items-center gap-1">{handle}</h4>
               <span className="text-[9px] font-mono tracking-wider text-zinc-400 border border-faint bg-zinc-900/60 px-2 py-0.5 rounded-none uppercase flex items-center gap-1">
                 <Award className="w-2.5 h-2.5" /> Verified Portfolio
               </span>
@@ -44,7 +50,7 @@ export default function InstagramGrid() {
         </div>
 
         <a
-          href="https://instagram.com/thephotoblog.india.1"
+          href="https://www.instagram.com/thephotoblog.india.1/"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-[10px] font-mono tracking-widest text-white border border-white hover:bg-white hover:text-black px-6 py-3 rounded-none transition-all uppercase cursor-pointer"
@@ -120,7 +126,7 @@ export default function InstagramGrid() {
               </div>
               <div className="absolute bottom-4 left-4 right-4 text-xs font-mono bg-black/85 px-3 py-2 border border-faint flex items-center justify-between">
                 <span className="text-zinc-500">Cinematic Codec: REDCODE RAW 8:1</span>
-                <span className="text-white font-serif italic">@thephotoblog.india.1</span>
+                <span className="text-white font-serif italic">{handle}</span>
               </div>
             </div>
 
@@ -163,7 +169,7 @@ export default function InstagramGrid() {
 
               <div className="mt-8">
                 <a
-                  href="https://instagram.com/thephotoblog.india.1"
+                  href="https://www.instagram.com/thephotoblog.india.1/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center bg-white hover:bg-zinc-200 text-black py-2.5 px-4 font-mono text-[10px] tracking-widest uppercase transition-all"

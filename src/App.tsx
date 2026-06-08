@@ -31,7 +31,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUp,
-  Share2
+  Share2,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -47,6 +48,7 @@ import InstagramGrid from './components/InstagramGrid';
 import WhatsAppProfileCard from './components/WhatsAppProfileCard';
 import { ContactFormData, PortfolioItem } from './types';
 import { Magnetic, SplitTextReveal } from './components/EditorialAnimations';
+import EditorialDivider from './components/EditorialDivider';
 
 // Admin System Imports
 import { 
@@ -63,8 +65,8 @@ import {
   getWhatsAppConfig,
   getSectionVisibility
 } from './lib/firebase';
-import AdminLogin from './components/admin/AdminLogin';
-import AdminDashboard from './components/admin/AdminDashboard';
+const AdminLogin = React.lazy(() => import('./components/admin/AdminLogin'));
+const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));
 
 // Sophisticated editorial motion variants
 const fadeInUpVariants = {
@@ -79,6 +81,24 @@ const fadeInUpVariants = {
     } 
   }
 };
+
+export function getOptimizedImageUrl(url: string, width: number, format: 'webp' | 'avif' | 'auto' = 'auto'): string {
+  if (!url || !url.includes('images.unsplash.com')) return url;
+  try {
+    const baseUrl = url.split('?')[0];
+    const params = new URLSearchParams(url.split('?')[1] || '');
+    params.set('w', width.toString());
+    params.set('q', '75'); 
+    if (format !== 'auto') {
+      params.set('fm', format);
+    } else {
+      params.set('auto', 'format');
+    }
+    return `${baseUrl}?${params.toString()}`;
+  } catch (_) {
+    return url;
+  }
+}
 
 const hoverTrackingVariants = {
   rest: { letterSpacing: "0.2em", borderBottomColor: "rgba(255, 255, 255, 0)", borderBottomWidth: "1px", paddingBottom: "2px" },
@@ -118,6 +138,8 @@ export default function App() {
   const [testimonialsData, setTestimonialsData] = useState<any[]>([]);
   const [whatsAppConfig, setWhatsAppConfig] = useState<any>(null);
   const [sectionVisibility, setSectionVisibility] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isCategoryChanging, setIsCategoryChanging] = useState<boolean>(false);
   
   // Admin Navigation and Session States
   const [isAdminRoute, setIsAdminRoute] = useState(
@@ -228,6 +250,61 @@ export default function App() {
     setIsCopied(false);
   }, [selectedPortfolioItem]);
 
+  // Dynamic SEO Open Graph tags and Page Title sync
+  useEffect(() => {
+    if (selectedPortfolioItem) {
+      document.title = `${selectedPortfolioItem.title} ✦ THE PHOTO BLOG.INDIA.1`;
+      
+      const updateMetaTag = (property: string, content: string) => {
+        let element = document.querySelector(`meta[property="${property}"]`);
+        if (!element) {
+          element = document.createElement('meta');
+          element.setAttribute('property', property);
+          document.head.appendChild(element);
+        }
+        element.setAttribute('content', content);
+      };
+
+      const updateNameTag = (name: string, content: string) => {
+        let element = document.querySelector(`meta[name="${name}"]`);
+        if (!element) {
+          element = document.createElement('meta');
+          element.setAttribute('name', name);
+          document.head.appendChild(element);
+        }
+        element.setAttribute('content', content);
+      };
+
+      updateMetaTag('og:title', `${selectedPortfolioItem.title} ✦ THE PHOTO BLOG.INDIA.1`);
+      updateMetaTag('og:description', `Co-directed digital film partnership for ${selectedPortfolioItem.client}. Category: ${selectedPortfolioItem.category}. Impact outcome: ${selectedPortfolioItem.impact}.`);
+      updateMetaTag('og:image', selectedPortfolioItem.imageUrl);
+      updateNameTag('description', `Co-directed digital film partnership for ${selectedPortfolioItem.client}. Category: ${selectedPortfolioItem.category}. Impact outcome: ${selectedPortfolioItem.impact}.`);
+    } else {
+      document.title = 'THE PHOTO BLOG.INDIA.1 ✦ Elite Photography & Cinematic Agency Jaipur';
+      
+      const updateMetaTag = (property: string, content: string) => {
+        const element = document.querySelector(`meta[property="${property}"]`);
+        if (element) {
+          if (property === 'og:title') element.setAttribute('content', 'THE PHOTO BLOG.INDIA.1 ✦ Elite Photography & Cinematic Agency');
+          if (property === 'og:description') element.setAttribute('content', 'Elite corporate photography, high-retention video production, and social-first editorial campaigns co-directed in Jaipur.');
+          if (property === 'og:image') element.setAttribute('content', 'https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&q=80&w=1200');
+        }
+      };
+      
+      const updateNameTag = (name: string, content: string) => {
+        const element = document.querySelector(`meta[name="${name}"]`);
+        if (element && name === 'description') {
+          element.setAttribute('content', 'Elite corporate photography, high-retention video production, and editorial campaigns co-directed in Jaipur, India. Specializing in cinematic brand takeovers.');
+        }
+      };
+
+      updateMetaTag('og:title', 'THE PHOTO BLOG.INDIA.1 ✦ Elite Photography & Cinematic Agency');
+      updateMetaTag('og:description', 'Elite corporate photography, high-retention video production, and social-first editorial campaigns co-directed in Jaipur.');
+      updateMetaTag('og:image', 'https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&q=80&w=1200');
+      updateNameTag('description', 'Elite corporate photography, high-retention video production, and editorial campaigns co-directed in Jaipur, India. Specializing in cinematic brand takeovers.');
+    }
+  }, [selectedPortfolioItem]);
+
   const handleCloseLightbox = () => {
     setSelectedPortfolioItem(null);
     if (window.location.search.includes('project=')) {
@@ -245,7 +322,7 @@ export default function App() {
     if (navigator.share && navigator.canShare && navigator.canShare({ url: shareUrl })) {
       try {
         await navigator.share({
-          title: `${selectedPortfolioItem.title} | THE PHOTO BLOG.INDIA`,
+          title: `${selectedPortfolioItem.title} | THE PHOTO BLOG.INDIA.1`,
           text: `Check out this digital collaboration: "${selectedPortfolioItem.title}" with ${selectedPortfolioItem.client}.`,
           url: shareUrl
         });
@@ -378,10 +455,24 @@ export default function App() {
         </header>
 
         {activeAdminUser ? (
-          <AdminDashboard user={activeAdminUser} onLogout={handleAdminLogout} />
+          <React.Suspense fallback={
+            <div className="flex flex-col justify-center items-center py-24 text-zinc-500 font-mono text-xs gap-3">
+              <RefreshCw className="w-5 h-5 animate-spin text-white" />
+              <span>SYNCHRONIZING REPOSITORY REGISTRY...</span>
+            </div>
+          }>
+            <AdminDashboard user={activeAdminUser} onLogout={handleAdminLogout} />
+          </React.Suspense>
         ) : (
           <div className="max-w-md mx-auto py-24 px-4">
-            <AdminLogin onLoginSuccess={handleAdminLogin} />
+            <React.Suspense fallback={
+              <div className="flex flex-col justify-center items-center py-12 text-zinc-500 font-mono text-xs gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-zinc-400" />
+                <span>LOADING SECURE DOORWAY...</span>
+              </div>
+            }>
+              <AdminLogin onLoginSuccess={handleAdminLogin} />
+            </React.Suspense>
           </div>
         )}
       </div>
@@ -421,7 +512,7 @@ export default function App() {
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="text-base font-serif italic tracking-tight text-white uppercase hover:text-zinc-400 transition-colors font-semibold"
           >
-            THE PHOTO BLOG.INDIA
+            THE PHOTO BLOG.INDIA.1
           </button>
 
           {/* Desktop Navigation */}
@@ -533,7 +624,7 @@ export default function App() {
             </nav>
 
             <div className="space-y-6">
-              <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 uppercase">THE PHOTO BLOG.INDIA • CINEMATIC STORYTELLERS</p>
+              <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 uppercase">THE PHOTO BLOG.INDIA.1 • CINEMATIC STORYTELLERS</p>
               <button
                 onClick={() => scrollToSection('contact')}
                 className="w-full bg-transparent border border-white hover:bg-white hover:text-black py-4 font-mono font-bold uppercase tracking-widest text-xs text-white"
@@ -556,7 +647,7 @@ export default function App() {
             animate={{ scale: 1.02, opacity: 1 }}
             transition={{ duration: 2.2, ease: [0.16, 1, 0.3, 1] }}
             src={heroConfig?.bgUrl || HERO_BACKGROUND}
-            alt="THE PHOTO BLOG.INDIA Cinematic Setting"
+            alt="THE PHOTO BLOG.INDIA.1 Cinematic Setting"
             className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.35] lg:brightness-60"
             referrerPolicy="no-referrer"
           />
@@ -588,7 +679,7 @@ export default function App() {
             <span>8K SENSORS</span>
           </div>
           <div className="h-px bg-zinc-900" />
-          <p className="leading-normal">THE PHOTO BLOG.INDIA / NEW-AGE CREATIVE HQ [JAIPUR, IN]</p>
+          <p className="leading-normal">THE PHOTO BLOG.INDIA.1 / NEW-AGE CREATIVE HQ [JAIPUR, IN]</p>
         </div>
 
         {/* HERO CONTENT */}
@@ -619,7 +710,7 @@ export default function App() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="mt-6 text-sm sm:text-base text-zinc-300 font-sans tracking-wide max-w-xl leading-relaxed lg:mx-0 mx-auto"
           >
-            {heroConfig?.subHeadline || "THE PHOTO BLOG.INDIA is a high-end digital marketing and cinematic media house. We direct premium film campaigns, brand collaborations, and high-fidelity visuals that compel eyes and capture market trust."}
+            {heroConfig?.subHeadline || "THE PHOTO BLOG.INDIA.1 is a high-end digital marketing and cinematic media house. We direct premium film campaigns, brand collaborations, and high-fidelity visuals that compel eyes and capture market trust."}
           </motion.p>
 
           {/* Action Callouts */}
@@ -666,14 +757,16 @@ export default function App() {
 
       {/* 2. ABOUT COMPANY SECTION */}
       {(!sectionVisibility || sectionVisibility.about) && (
-        <motion.section 
-          id="about" 
-          className="py-24 md:py-32 bg-black border-y border-white/10 px-6 md:px-12 relative"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <>
+          <EditorialDivider label="01 // THE AGENCY STATEMENT" />
+          <motion.section 
+            id="about" 
+            className="py-24 md:py-32 bg-black px-6 md:px-12 relative"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          >
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             
             {/* Graphic Image Framing */}
@@ -685,12 +778,17 @@ export default function App() {
               <div className="absolute bottom-2 right-2 text-[8px] font-mono text-zinc-600 uppercase tracking-widest">RESOLUTION: 8K UNCOMPRESSED</div>
 
               <div className="aspect-square md:aspect-[4/5] rounded-none overflow-hidden bg-zinc-900 border border-white/10">
-                <img
-                  src={aboutSettings?.aboutImage || ABOUT_IMAGE}
-                  alt="Director portrait"
-                  className="w-full h-full object-cover grayscale brightness-95 group-hover:grayscale-0 transition-all duration-700 hover:scale-102"
-                  referrerPolicy="no-referrer"
-                />
+                <picture>
+                  <source srcSet={getOptimizedImageUrl(aboutSettings?.aboutImage || ABOUT_IMAGE, 800, 'avif')} type="image/avif" />
+                  <source srcSet={getOptimizedImageUrl(aboutSettings?.aboutImage || ABOUT_IMAGE, 800, 'webp')} type="image/webp" />
+                  <img
+                    src={getOptimizedImageUrl(aboutSettings?.aboutImage || ABOUT_IMAGE, 800, 'auto')}
+                    alt="Director portrait"
+                    className="w-full h-full object-cover grayscale brightness-95 group-hover:grayscale-0 transition-all duration-700 hover:scale-102"
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                  />
+                </picture>
               </div>
 
               {/* Simulated Live Metadata strip below */}
@@ -715,7 +813,7 @@ export default function App() {
                 ) : (
                   <>
                     <p className="text-zinc-400">
-                      Founded under the creative vision of premier Indian media designers, **THE PHOTO BLOG.INDIA** has grown into an elite creative firm. We reject the standard, dry, cookie-cutter social media formulas. We treat every social post, video script, and campaign drop as a high-end cinematic editorial launch.
+                      Founded under the creative vision of premier Indian media designers, **THE PHOTO BLOG.INDIA.1** has grown into an elite creative firm. We reject the standard, dry, cookie-cutter social media formulas. We treat every social post, video script, and campaign drop as a high-end cinematic editorial launch.
                     </p>
 
                     <p className="text-zinc-400">
@@ -745,18 +843,21 @@ export default function App() {
 
           </div>
         </motion.section>
+        </>
       )}
 
       {/* 3. OUR SERVICES SECTION */}
       {(!sectionVisibility || sectionVisibility.services) && (
-        <motion.section 
-          id="services" 
-          className="py-24 md:py-32 bg-transparent px-6 md:px-12 relative border-b border-white/10"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={staggerContainer}
-        >
+        <>
+          <EditorialDivider label="02 // CORE CAPABILITIES" />
+          <motion.section 
+            id="services" 
+            className="py-24 md:py-32 bg-transparent px-6 md:px-12 relative"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+          >
           <div className="max-w-7xl mx-auto space-y-16">
             
             {/* Header */}
@@ -822,18 +923,21 @@ export default function App() {
 
           </div>
         </motion.section>
+        </>
       )}
 
       {/* 4. DYNAMIC INTERACTIVE ESTIMATOR & CAMPAIGN BUILDER (Requested Action flow) */}
       {(!sectionVisibility || sectionVisibility.estimator) && (
-        <motion.section 
-          id="estimator" 
-          className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden border-b border-white/10"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <>
+          <EditorialDivider label="03 // DIGITAL ROADMAP CONFIGURATOR" />
+          <motion.section 
+            id="estimator" 
+            className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          >
           <div className="max-w-4xl mx-auto space-y-12 relative z-10">
             <div className="text-center space-y-4 max-w-xl mx-auto">
               <span className="text-[10px] font-mono tracking-[0.2em] text-white border border-white/10 px-3 py-1 rounded-none uppercase bg-zinc-900/60">Configurator Toolkit</span>
@@ -846,18 +950,21 @@ export default function App() {
             <CampaignEstimator onIntegrate={handleEstimatorIntegration} />
           </div>
         </motion.section>
+        </>
       )}
 
       {/* 5. WHY CHOOSE US SECTION */}
       {(!sectionVisibility || sectionVisibility.whyUs) && (
-        <motion.section 
-          id="why-us" 
-          className="py-24 md:py-32 bg-[#060606] px-6 md:px-12 relative"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={staggerContainer}
-        >
+        <>
+          <EditorialDivider label="04 // CREATIVE VALUE PROPOSITION" />
+          <motion.section 
+            id="why-us" 
+            className="py-24 md:py-32 bg-[#060606] px-6 md:px-12 relative"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+          >
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             
             {/* Why Choose Us Sticky Left Column */}
@@ -918,14 +1025,17 @@ export default function App() {
 
           </div>
         </motion.section>
+        </>
       )}
 
       {/* 6. CLIENT TESTIMONIALS SECTION */}
       {(!sectionVisibility || sectionVisibility.testimonials) && (
-        <motion.section 
-          className="py-24 md:py-32 bg-black border-y border-white/10 px-6 md:px-12 relative overflow-hidden"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
+        <>
+          <EditorialDivider label="05 // EXECUTIVE ENDORSEMENTS" />
+          <motion.section 
+            className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
         >
@@ -983,16 +1093,19 @@ export default function App() {
 
           </div>
         </motion.section>
+        </>
       )}
 
       {/* 7. LATEST PORTFOLIO COLLABS GRID */}
       {(!sectionVisibility || sectionVisibility.portfolio) && (
-        <motion.section 
-          id="portfolio" 
-          className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 border-b border-white/10"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+        <>
+          <EditorialDivider label="06 // CINEMATIC PORTFOLIO" />
+          <motion.section 
+            id="portfolio" 
+            className="py-24 md:py-32 bg-[#080808] px-6 md:px-12"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
           variants={staggerContainer}
         >
           <div className="max-w-7xl mx-auto space-y-16">
@@ -1006,72 +1119,154 @@ export default function App() {
               </p>
             </motion.div>
   
-            {/* Portfolio Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {portfolioItems.map((item) => (
-                <motion.div
-                  key={item.id}
-                  variants={fadeInUpVariants}
-                  className="group relative bg-[#0a0a0a] border border-white/10 rounded-none overflow-hidden hover:border-white/30 transition-all duration-300"
-                >
-                  {/* Image layout container */}
-                  <div 
-                    className="aspect-[16/10] overflow-hidden relative cursor-pointer group/img"
-                    onClick={() => setSelectedPortfolioItem(item)}
+            {/* Elegant Editorial Filter Tabs */}
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-2 pb-6 border-b border-white/5 max-w-4xl mx-auto">
+              {[
+                { id: 'all', label: 'ALL CAMPAIGNS' },
+                { id: 'Brand Collaboration', label: 'COLLAB SYNERGY' },
+                { id: 'Editorial Photography', label: 'EDITORIAL STILLS' },
+                { id: 'Cinematic Videography', label: 'CINEMATIC VIDEO' },
+                { id: 'Brand Campaign', label: 'BRAND CONCEPTS' }
+              ].map((cat) => {
+                const isActive = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      if (selectedCategory === cat.id) return;
+                      setIsCategoryChanging(true);
+                      setSelectedCategory(cat.id);
+                      setTimeout(() => {
+                        setIsCategoryChanging(false);
+                      }, 400);
+                    }}
+                    className={`relative text-[10px] uppercase font-mono tracking-[0.18em] py-2 px-3 transition-all cursor-pointer ${
+                      isActive 
+                        ? 'text-white font-bold' 
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
-                    <img
-                      src={item.imageUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-700"
-                      referrerPolicy="no-referrer"
-                    />
-                    
-                    {/* Luxury editorial hover cue overlay */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                      <div className="border border-white/20 bg-black/70 px-4 py-2 text-[10px] uppercase font-mono tracking-[0.2em] text-white">
-                        Inspect Frame ✦
+                    {cat.label}
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeCategoryBorder"
+                        className="absolute bottom-0 left-0 w-full h-[1px] bg-white"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Portfolio Grid wrapper */}
+            <div className="relative min-h-[400px]">
+              {isCategoryChanging ? (
+                /* High-fidelity Skeleton Loaders with Shimmer */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                  {[1, 2, 3, 4].map((n) => (
+                    <div key={n} className="space-y-4 animate-pulse">
+                      <div className="aspect-[16/10] bg-zinc-950/60 border border-white/5 relative overflow-hidden">
+                        {/* Shimmer overlay gradient moving left-to-right */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.8s_infinite]" />
+                        <div className="absolute top-4 left-4 w-24 h-4 bg-zinc-900 border border-white/5" />
+                        <div className="absolute bottom-4 right-4 w-16 h-4 bg-zinc-900" />
+                      </div>
+                      <div className="flex justify-between items-center px-2">
+                        <div className="space-y-2">
+                          <div className="w-24 h-3 bg-zinc-900" />
+                          <div className="w-48 h-4 bg-zinc-900" />
+                        </div>
+                        <div className="w-10 h-4 bg-zinc-900" />
                       </div>
                     </div>
-                    
-                    {/* Category Pill floating top */}
-                    <div className="absolute top-4 left-4 bg-black/90 px-3 py-1 rounded-none border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 uppercase z-10">
-                      {item.category}
-                    </div>
-  
-                    {/* Impact text indicator floating bottom right */}
-                    <div className="absolute bottom-4 right-4 bg-white text-black px-2.5 py-1 rounded-none font-mono font-medium text-[9px] tracking-wider uppercase z-10">
-                      {item.impact}
-                    </div>
-                  </div>
-  
-                  <div className="p-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-mono text-zinc-505 uppercase tracking-widest">CLIENT — {item.client}</span>
-                      <h3 className="text-lg font-serif text-white font-medium">{item.title}</h3>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-mono text-zinc-500">{item.year}</span>
-                    </div>
-                  </div>
-  
+                  ))}
+                </div>
+              ) : (
+                /* Refined Interactive Portfolio Grid */
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-8"
+                >
+                  {(portfolioItems.length > 0 ? portfolioItems : PORTFOLIO_DATA)
+                    .filter(item => !(item as any).hidden)
+                    .filter(item => selectedCategory === 'all' || item.category === selectedCategory)
+                    .map((item) => (
+                      <motion.div
+                        key={item.id}
+                        variants={fadeInUpVariants}
+                        className="group relative bg-[#0a0a0a] border border-white/10 rounded-none overflow-hidden hover:border-white/30 transition-all duration-300"
+                      >
+                        {/* Image layout container */}
+                        <div 
+                          className="aspect-[16/10] overflow-hidden relative cursor-pointer group/img"
+                          onClick={() => setSelectedPortfolioItem(item)}
+                        >
+                          <picture>
+                            <source srcSet={getOptimizedImageUrl(item.imageUrl, 1080, 'avif')} type="image/avif" />
+                            <source srcSet={getOptimizedImageUrl(item.imageUrl, 1080, 'webp')} type="image/webp" />
+                            <img
+                              src={getOptimizedImageUrl(item.imageUrl, 1080, 'auto')}
+                              alt={item.title}
+                              className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-700"
+                              referrerPolicy="no-referrer"
+                              loading="lazy"
+                            />
+                          </picture>
+                          
+                          {/* Luxury editorial hover cue overlay */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                            <div className="border border-white/20 bg-black/70 px-4 py-2 text-[10px] uppercase font-mono tracking-[0.2em] text-white">
+                              Inspect Frame ✦
+                            </div>
+                          </div>
+                          
+                          {/* Category Pill floating top */}
+                          <div className="absolute top-4 left-4 bg-black/90 px-3 py-1 rounded-none border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 uppercase z-10">
+                            {item.category}
+                          </div>
+        
+                          {/* Impact text indicator floating bottom right */}
+                          <div className="absolute bottom-4 right-4 bg-white text-black px-2.5 py-1 rounded-none font-mono font-medium text-[9px] tracking-wider uppercase z-10">
+                            {item.impact}
+                          </div>
+                        </div>
+        
+                        <div className="p-6 flex items-center justify-between">
+                          <div className="space-y-1">
+                            <span className="text-[9px] font-mono text-zinc-505 uppercase tracking-widest">CLIENT — {item.client}</span>
+                            <h3 className="text-lg font-serif text-white font-medium">{item.title}</h3>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs font-mono text-zinc-500">{item.year}</span>
+                          </div>
+                        </div>
+        
+                      </motion.div>
+                  ))}
                 </motion.div>
-              ))}
+              )}
             </div>
   
           </div>
         </motion.section>
+        </>
       )}
 
       {/* 8. INSTAGRAM showcase SECTION (Required explicitly in request) */}
       {(!sectionVisibility || sectionVisibility.feed) && (
-        <motion.section 
-          id="instagram" 
-          className="py-24 bg-black px-6 md:px-12 relative border-b border-white/10"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <>
+          <EditorialDivider label="07 // REALTIME DIGITAL SYNDICATION" />
+          <motion.section 
+            id="instagram" 
+            className="py-24 bg-black px-6 md:px-12 relative"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          >
           <div className="max-w-7xl mx-auto space-y-12">
             
             <div className="text-center space-y-4 max-w-xl mx-auto">
@@ -1085,18 +1280,21 @@ export default function App() {
             <InstagramGrid />
           </div>
         </motion.section>
+        </>
       )}
 
       {/* 9. CONTACT CTA SECTION */}
       {(!sectionVisibility || sectionVisibility.contact) && (
-        <motion.section 
-          id="contact" 
-          className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 border-t border-white/10 relative"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <>
+          <EditorialDivider label="08 // CLIENT DIRECT OFFICE" />
+          <motion.section 
+            id="contact" 
+            className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 relative"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          >
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           
           {/* Contact Details left */}
@@ -1247,7 +1445,7 @@ export default function App() {
                   </button>
 
                   <p className="text-[10px] text-zinc-550 text-center leading-normal">
-                    By submitting, you align with the photographic and cinematography standards of THE PHOTO BLOG.INDIA. We treat all creative proposals as strictly confidential.
+                    By submitting, you align with the photographic and cinematography standards of THE PHOTO BLOG.INDIA.1. We treat all creative proposals as strictly confidential.
                   </p>
                 </motion.form>
               ) : (
@@ -1264,7 +1462,7 @@ export default function App() {
                   <div className="space-y-3">
                     <h3 className="text-2xl font-serif text-white">Transmission Successful</h3>
                     <p className="text-xs text-zinc-450 max-w-sm mx-auto">
-                      Your campaign configuration and parameters have been logged. The creative directors of **THE PHOTO BLOG.INDIA** are reviewing the assets.
+                      Your campaign configuration and parameters have been logged. The creative directors of **THE PHOTO BLOG.INDIA.1** are reviewing the assets.
                     </p>
                   </div>
 
@@ -1331,17 +1529,19 @@ export default function App() {
 
         </div>
       </motion.section>
+        </>
       )}
 
       {/* 10. ELITE FOOTER */}
-      <footer className="bg-black border-t border-white/10 py-16 px-6 md:px-12 text-zinc-400 relative z-30 font-mono">
+      <EditorialDivider label="09 // END CREDITS & ARCHIVE" />
+      <footer className="bg-black py-16 px-6 md:px-12 text-zinc-400 relative z-30 font-mono">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start justify-between gap-12">
           
           <div className="space-y-4 max-w-sm">
             {/* Logo */}
             <div className="flex flex-col items-start text-left">
               <span className="font-serif italic text-base font-semibold text-white uppercase tracking-tight">
-                THE PHOTO BLOG.INDIA
+                THE PHOTO BLOG.INDIA.1
               </span>
             </div>
             <p className="text-[11px] text-zinc-500 leading-relaxed font-sans">
@@ -1364,7 +1564,7 @@ export default function App() {
             <div className="space-y-4 text-xs">
               <h5 className="text-zinc-500 tracking-widest uppercase">SYNDICATIONS</h5>
               <div className="flex flex-col gap-2 text-[10px] text-zinc-400 tracking-[0.12em] uppercase">
-                <a href="https://instagram.com/thephotoblog.india.1" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1">@thephotoblog.india.1</a>
+                <a href="https://www.instagram.com/thephotoblog.india.1/" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1">@thephotoblog.india.1</a>
                 <span className="cursor-default">Cinematic Reels</span>
                 <span className="cursor-default">Brand Collabs</span>
                 <span className="cursor-default">Behind Scene</span>
@@ -1386,7 +1586,7 @@ export default function App() {
 
         {/* Divider and absolute bottom details */}
         <div className="max-w-7xl mx-auto h-px bg-white/10 mt-16 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[9px] text-zinc-600 uppercase">
-          <p>THE PHOTO BLOG.INDIA IS AN INDEPENDENT DIGITAL MEDIA TRADEMARK OPERATIONAL IN INDIA.</p>
+          <p>THE PHOTO BLOG.INDIA.1 IS AN INDEPENDENT DIGITAL MEDIA TRADEMARK OPERATIONAL IN INDIA.</p>
           <div className="flex items-center gap-4">
             <span>8K S Standards</span>
             <span>✦</span>
@@ -1414,7 +1614,7 @@ export default function App() {
           >
             {/* Header control line */}
             <div className="flex items-center justify-between font-mono text-[10px] text-zinc-500 uppercase tracking-widest border-b border-white/10 pb-4">
-              <span>THE PHOTO BLOG.INDIA ✦ CASE PORTFOLIO</span>
+              <span>THE PHOTO BLOG.INDIA.1 ✦ CASE PORTFOLIO</span>
               <span>FRAME {portfolioItems.findIndex(item => item.id === selectedPortfolioItem.id) + 1} / {portfolioItems.length}</span>
               <button 
                 onClick={handleCloseLightbox}
@@ -1466,7 +1666,7 @@ export default function App() {
                 <div className="border-t border-white/10 pt-4 space-y-3 font-mono text-xs">
                   <div className="flex justify-between items-center text-zinc-500">
                     <span>CO-DIRECTOR</span>
-                    <span className="text-zinc-200">THE PHOTO BLOG.INDIA</span>
+                    <span className="text-zinc-200">THE PHOTO BLOG.INDIA.1</span>
                   </div>
                   <div className="flex justify-between items-center text-zinc-500">
                     <span>LAUNCH COLLAB</span>

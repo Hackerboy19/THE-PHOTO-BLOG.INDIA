@@ -339,7 +339,7 @@ export interface SectionVisibilitySettings {
 }
 
 const DEFAULT_ABOUT: AboutSettings = {
-  backstory: "THE PHOTO BLOG.INDIA is a high-end digital marketing and cinematic media house. We direct premium film campaigns, brand collaborations, and high-fidelity visuals that compel eyes and capture market trust.",
+  backstory: "THE PHOTO BLOG.INDIA.1 is a high-end digital marketing and cinematic media house. We direct premium film campaigns, brand collaborations, and high-fidelity visuals that compel eyes and capture market trust.",
   shutter: "1/250",
   iso: "100",
   aperture: "f/1.4",

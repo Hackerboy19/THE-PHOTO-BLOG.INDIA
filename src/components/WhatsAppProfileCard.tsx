@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Magnetic } from './EditorialAnimations';
+import { InstagramHandle, validateInstagramHandle } from '../types';
 
 interface WhatsAppProfileCardProps {
   onImageClick?: (item: any) => void;
@@ -25,11 +26,16 @@ interface WhatsAppProfileCardProps {
     hours?: string;
     followers?: string;
     phone?: string;
+    instagramHandle?: InstagramHandle;
   };
 }
 
 export default function WhatsAppProfileCard({ onImageClick, portfolioItems, config }: WhatsAppProfileCardProps) {
   const [showHoursDropdown, setShowHoursDropdown] = useState(false);
+  
+  const currentHandle: InstagramHandle = config?.instagramHandle || '@thephotoblog.india.1';
+  // Perform prop validation check
+  validateInstagramHandle(currentHandle);
 
   // 1. Get the current day of the week (0 = Sunday, 1 = Monday, ..., 5 = Friday, 6 = Saturday)
   const currentDayIndex = new Date().getDay();
@@ -50,17 +56,17 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
     ? `${currentDay.name} (${currentDay.index === 0 ? 'Closed' : 'Open'})`
     : 'Business hours';
 
-  // The premium custom SVG logo of "THE PHOTO BLOG.INDIA / MUSKAN" as shown in the screenshot
+  // The premium custom SVG logo of "THE PHOTO BLOG.INDIA.1 / MUSKAN" as shown in the screenshot
   const BrandLogoSVG = () => (
     <svg viewBox="0 0 200 200" className="w-full h-full text-black p-4" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Outer circular layout path hint */}
       <circle cx="100" cy="100" r="92" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.2" />
       
-      {/* Top Semi-circular Text "THE PHOTO BLOG.INDIA" */}
+      {/* Top Semi-circular Text "THE PHOTO BLOG.INDIA.1" */}
       <path id="curve-top" d="M 30,100 A 70,70 0 0,1 170,100" className="fill-none" />
       <text className="font-mono text-[9px] uppercase tracking-[0.18em] fill-black font-semibold">
         <textPath href="#curve-top" startOffset="50%" textAnchor="middle">
-          THE PHOTO BLOG.INDIA
+          THE PHOTO BLOG.INDIA.1
         </textPath>
       </text>
 
@@ -112,7 +118,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
             </div>
           </div>
           <h3 className="text-xl font-semibold text-white mt-4 font-serif">Muskan</h3>
-          <span className="text-[10px] font-mono text-[#8696a0] tracking-widest mt-1">THE PHOTO BLOG.INDIA</span>
+          <span className="text-[10px] font-mono text-[#8696a0] tracking-widest mt-1">THE PHOTO BLOG.INDIA.1</span>
         </div>
 
         {/* Brand Slogans and Slogan Card */}
@@ -223,7 +229,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
 
           {/* Instagram Link */}
           <a 
-            href="https://instagram.com/thephotoblog.india.1" 
+            href="https://www.instagram.com/thephotoblog.india.1/" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="flex items-center gap-3 group"
@@ -232,7 +238,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
             <div className="flex-1 flex justify-between items-center">
               <div>
                 <span className="text-[10px] text-[#8696a0] block uppercase font-mono tracking-widest">Instagram Syndicate</span>
-                <span className="text-xs font-semibold text-zinc-100">@thephotoblog.india.1</span>
+                <span className="text-xs font-semibold text-zinc-100">{currentHandle}</span>
               </div>
               <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded-none font-mono text-zinc-400 group-hover:text-white transition-all">
                 {config?.followers || "38K Followers"}
@@ -289,7 +295,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
         <div className="pt-2 text-center">
           <Magnetic>
             <a
-              href={`https://wa.me/+91${config?.phone || "9145961226"}?text=Hi%20Muskan%2C%20we'd%20love%20to%20discuss%20a%20social%20media%20management%20and%20branding%20collaboration%20with%20The%20Photo%20Blog%20India%20hub.`}
+              href={`https://wa.me/+91${config?.phone || "9145961226"}?text=Hi%20Muskan%2C%20we'd%20love%20to%20discuss%20a%20social%20media%20management%20and%20branding%20collaboration%20with%20The%20Photo%20Blog%252520India.1%252520hub.`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-full min-w-[280px] bg-[#00a884] hover:bg-[#00bfa5] text-black py-3 px-4 font-bold text-xs tracking-widest uppercase transition-all rounded-none items-center justify-center gap-2 font-mono"

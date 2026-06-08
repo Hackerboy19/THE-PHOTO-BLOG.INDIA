@@ -52,3 +52,27 @@ export interface ContactFormData {
   estimatedBudget: string;
   projectMessage: string;
 }
+
+export type InstagramHandle = `@${string}.${string}.${string}.${number}` | `@thephotoblog.india.1` | string;
+
+export interface SocialHandleProps {
+  handle: InstagramHandle;
+}
+
+/**
+ * Validate that an Instagram handle preserves full dot-suffix integrity (e.g. .india.1)
+ */
+export function validateInstagramHandle(handle: string): boolean {
+  if (!handle) return false;
+  if (!handle.startsWith('@')) {
+    console.warn(`[Social Validation Warning]: Handle "${handle}" must start with "@"`);
+    return false;
+  }
+  // Validate presence of trailing integers or dot segments
+  const pattern = /\.[a-zA-Z0-9_-]+\.\d+$/;
+  if (!pattern.test(handle) && handle !== '@thephotoblog.india.1') {
+    console.warn(`[Social Validation Warning]: Handle "${handle}" is missing numeric suffix or dots.`);
+    return false;
+  }
+  return true;
+}

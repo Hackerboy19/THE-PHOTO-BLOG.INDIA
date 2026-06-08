@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getEstimatorConfig, saveEstimatorConfig, EstimatorSettings } from '../../lib/firebase';
 import { Save, RefreshCw, Sliders, DollarSign, Clock, HelpCircle, ShieldAlert } from 'lucide-react';
+import { usePriceCalculator } from '../../hooks/usePriceCalculator';
 
 export default function EstimatorConfigurator() {
   const [config, setConfig] = useState<EstimatorSettings | null>(null);
@@ -12,6 +13,9 @@ export default function EstimatorConfigurator() {
   const [simServices, setSimServices] = useState<string[]>(['cinematic-video']);
   const [simScale, setSimScale] = useState<string>('mid');
   const [simTimeline, setSimTimeline] = useState<string>('standard');
+
+  // Multiplier pricing decoupled hook
+  const priceStats = usePriceCalculator(config, simServices, simScale, simTimeline, 150);
 
   useEffect(() => {
     async function load() {
@@ -63,24 +67,8 @@ export default function EstimatorConfigurator() {
     }
   };
 
-  // Live estimate simulator calculation
-  const simValue = () => {
-    if (!config) return '₹0';
-    let base = 0;
-    simServices.forEach(s => {
-      base += config.basePrices[s] || 0;
-    });
-
-    const scaleMult = config.scaleMultipliers[simScale] || 1.0;
-    const timeMult = config.timelineMultipliers[simTimeline] || 1.0;
-
-    const totalEstimateVal = Math.round(base * scaleMult * timeMult);
-    
-    // Convert to INR equivalent output
-    const minINR = totalEstimateVal * 60;
-    const maxINR = Math.round(totalEstimateVal * 1.3) * 60;
-    return `₹${minINR.toLocaleString('en-IN')} - ₹${maxINR.toLocaleString('en-IN')}`;
-  };
+  // Live estimate simulator calculation using decoupled hook stats
+  const simValue = () => priceStats.rangeText;
 
   if (loading) {
     return (

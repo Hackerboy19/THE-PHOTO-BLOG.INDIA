@@ -11,8 +11,8 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { PortfolioItem, Service, WhyChooseUsItem, Testimonial } from '../types';
-import { SERVICES_DATA, WHY_CHOOSE_US_DATA, TESTIMONIALS_DATA } from '../data';
+import { PortfolioItem, Service, WhyChooseUsItem, Testimonial, InstagramPost, ClientProject } from '../types';
+import { SERVICES_DATA, WHY_CHOOSE_US_DATA, TESTIMONIALS_DATA, INSTAGRAM_POSTS } from '../data';
 
 export enum OperationType {
   CREATE = 'create',
@@ -118,6 +118,7 @@ const DEFAULT_ESTIMATOR_CONFIG: EstimatorSettings = {
 const KEY_HERO = "tpb_settings_hero";
 const KEY_ESTIMATOR = "tpb_settings_estimator";
 const KEY_PORTFOLIO = "tpb_portfolio_list";
+const KEY_INSTAGRAM = "tpb_instagram_posts_list";
 const KEY_MOCK_AUTH = "tpb_mock_auth_user";
 
 // --- HERO DATA ENDPOINTS ---
@@ -339,7 +340,7 @@ export interface SectionVisibilitySettings {
 }
 
 const DEFAULT_ABOUT: AboutSettings = {
-  backstory: "THE PHOTO BLOG.INDIA.1 is a high-end digital marketing and cinematic media house. We direct premium film campaigns, brand collaborations, and high-fidelity visuals that compel eyes and capture market trust.",
+  backstory: "We turn your brand into a story which digital media celebrates. A Jaipur-rooted marketing agency thriving to grow brands globally. We take immense pride in shaping businesses led by women and visionary founders.",
   shutter: "1/250",
   iso: "100",
   aperture: "f/1.4",
@@ -347,8 +348,8 @@ const DEFAULT_ABOUT: AboutSettings = {
 };
 
 const DEFAULT_WHATSAPP_CONFIG: WhatsAppConfig = {
-  slogan: "We are a new-age marketing agency providing social media management, performance marketing, branding & identity.",
-  quote: "We thrive to turn your brand into a story which the digital media remembers.",
+  slogan: "We turn your brand into a story which digital media celebrates. A Jaipur-rooted marketing agency thriving to grow brands globally.",
+  quote: "We don’t just market. We build brands. Jaipur rooted. Growing globally.",
   hours: "10:00 am – 6:00 pm",
   followers: "38K Followers",
   phone: "9145961226"
@@ -653,6 +654,224 @@ export async function saveSectionVisibility(data: SectionVisibilitySettings): Pr
       handleFirestoreError(err, OperationType.WRITE, 'settings/visibility');
     }
   }
+}
+
+// --- INSTAGRAM FEED ENDPOINTS ---
+export async function getInstagramPosts(): Promise<InstagramPost[]> {
+  if (isFirebaseActive && db) {
+    try {
+      const snap = await getDocs(collection(db, 'instagram_posts'));
+      const list: InstagramPost[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...d.data() } as InstagramPost);
+      });
+      if (list.length > 0) return list;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.LIST, 'instagram_posts');
+    }
+  }
+  const local = localStorage.getItem(KEY_INSTAGRAM);
+  if (local) {
+    try { return JSON.parse(local); } catch (_) {}
+  }
+  return [...INSTAGRAM_POSTS];
+}
+
+export async function saveInstagramPost(item: InstagramPost): Promise<void> {
+  const all = await getInstagramPosts();
+  const index = all.findIndex((x) => x.id === item.id);
+  if (index >= 0) all[index] = item;
+  else all.push(item);
+  localStorage.setItem(KEY_INSTAGRAM, JSON.stringify(all));
+
+  if (isFirebaseActive && db) {
+    try {
+      await setDoc(doc(db, 'instagram_posts', item.id), item);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `instagram_posts/${item.id}`);
+    }
+  }
+}
+
+export async function saveAllInstagramPosts(items: InstagramPost[]): Promise<void> {
+  localStorage.setItem(KEY_INSTAGRAM, JSON.stringify(items));
+  if (isFirebaseActive && db) {
+    for (const item of items) {
+      try {
+        await setDoc(doc(db, 'instagram_posts', item.id), item);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `instagram_posts/${item.id}`);
+      }
+    }
+  }
+}
+
+export async function deleteInstagramPostItem(id: string): Promise<void> {
+  const all = await getInstagramPosts();
+  const filtered = all.filter((x) => x.id !== id);
+  localStorage.setItem(KEY_INSTAGRAM, JSON.stringify(filtered));
+
+  if (isFirebaseActive && db) {
+    try {
+      await deleteDoc(doc(db, 'instagram_posts', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `instagram_posts/${id}`);
+    }
+  }
+}
+
+// --- CLIENT PRE-PRODUCTION PROJECT ENDPOINTS ---
+const KEY_CLIENT_PROJECTS = "tpb_client_projects_list";
+const DEFAULT_CLIENT_PROJECTS: ClientProject[] = [
+  {
+    id: "TPB-CLIENT-85",
+    clientName: "Muskan Mundhra",
+    projectName: "Heritage Elegance Campaign",
+    projectTitle: "Heritage Elegance Campaign",
+    status: "moodboard",
+    timelineProgress: 40,
+    moodboardUrl: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=800",
+    proofingVideoUrl: "https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c054ba20341dc17e2e3eed50c1825b42&profile_id=139&oauth2_token_id=57447761",
+    invoiceAmount: 185000,
+    currentMilestone: "Moodboard",
+    milestoneStatus: "in-progress",
+    progressPercentage: 40,
+    lastUpdated: "June 2026",
+    draftVideoUrl: "https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c054ba20341dc17e2e3eed50c1825b42&profile_id=139&oauth2_token_id=57447761",
+    feedbackComments: [
+      { id: "cmt-1", timestamp: "00:15", author: "Muskan Mundhra", text: "The lighting of Jantar Mantar is impeccable, can we increase the golden hue slightly?", createdDate: "2026-06-03" },
+      { id: "cmt-2", timestamp: "00:42", author: "Cinematic Director", text: "Agreed. Added customized orange color grading curves to post-processing pipeline.", createdDate: "2026-06-04" }
+    ],
+    proofStills: [
+      { id: "still-1", imageUrl: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=800", label: "01 // Jantar Mantar Sunrise Cut", feedback: "Exquisite framing!" },
+      { id: "still-2", imageUrl: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=800", label: "02 // Camera Setup Behind the Scenes" }
+    ]
+  },
+  {
+    id: "TPB-LUXURY-77",
+    clientName: "Taj Hotels India",
+    projectName: "Royal Luxury Stills Sequence",
+    projectTitle: "Royal Luxury Stills Sequence",
+    status: "scripting",
+    timelineProgress: 20,
+    moodboardUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=1000",
+    proofingVideoUrl: "https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c054ba20341dc17e2e3eed50c1825b42&profile_id=139&oauth2_token_id=57447761",
+    invoiceAmount: 450000,
+    currentMilestone: "Scripting",
+    milestoneStatus: "completed",
+    progressPercentage: 20,
+    lastUpdated: "June 2026",
+    draftVideoUrl: "https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c054ba20341dc17e2e3eed50c1825b42&profile_id=139&oauth2_token_id=57447761",
+    feedbackComments: [],
+    proofStills: []
+  }
+];
+
+export async function getClientProjects(): Promise<ClientProject[]> {
+  if (isFirebaseActive && db) {
+    try {
+      const snap = await getDocs(collection(db, 'client_projects'));
+      const list: ClientProject[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...d.data() } as ClientProject);
+      });
+      if (list.length > 0) return list;
+    } catch (err) {
+      console.warn("Firestore error listing client_projects:", err);
+    }
+  }
+  const local = localStorage.getItem(KEY_CLIENT_PROJECTS);
+  if (local) {
+    try { return JSON.parse(local); } catch (_) {}
+  } else {
+    // Save defaults to localStorage initially
+    localStorage.setItem(KEY_CLIENT_PROJECTS, JSON.stringify(DEFAULT_CLIENT_PROJECTS));
+  }
+  return [...DEFAULT_CLIENT_PROJECTS];
+}
+
+export async function saveClientProject(item: ClientProject): Promise<void> {
+  const all = await getClientProjects();
+  const index = all.findIndex((x) => x.id === item.id);
+  if (index >= 0) all[index] = item;
+  else all.push(item);
+  localStorage.setItem(KEY_CLIENT_PROJECTS, JSON.stringify(all));
+
+  if (isFirebaseActive && db) {
+    try {
+      await setDoc(doc(db, 'client_projects', item.id), item);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `client_projects/${item.id}`);
+    }
+  }
+}
+
+export async function deleteClientProject(id: string): Promise<void> {
+  const all = await getClientProjects();
+  const filtered = all.filter((x) => x.id !== id);
+  localStorage.setItem(KEY_CLIENT_PROJECTS, JSON.stringify(filtered));
+
+  if (isFirebaseActive && db) {
+    try {
+      await deleteDoc(doc(db, 'client_projects', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `client_projects/${id}`);
+    }
+  }
+}
+
+/**
+ * Subscribes to a client project with real-time reactive sync.
+ * Falls back to LocalStorage polling if Firebase is not active.
+ */
+export function subscribeToClientProject(id: string, onUpdate: (project: ClientProject | null) => void): () => void {
+  const targetId = id.toUpperCase().trim();
+  
+  if (isFirebaseActive && db) {
+    try {
+      const docRef = doc(db, 'client_projects', targetId);
+      const unsubscribe = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          onUpdate({ id: docSnap.id, ...docSnap.data() } as ClientProject);
+        } else {
+          onUpdate(null);
+        }
+      }, (err) => {
+        console.warn("Error in client project onSnapshot sub:", err);
+      });
+      return unsubscribe;
+    } catch (err) {
+      console.warn("Failed to subscribe using Firestore onSnapshot:", err);
+    }
+  }
+
+  // Fallback: Reactive LocalStorage Polling
+  let lastState = '';
+  const poll = () => {
+    const local = localStorage.getItem(KEY_CLIENT_PROJECTS);
+    if (local) {
+      try {
+        const list: ClientProject[] = JSON.parse(local);
+        const matched = list.find(x => x.id.toUpperCase() === targetId);
+        if (matched) {
+          const stringified = JSON.stringify(matched);
+          if (stringified !== lastState) {
+            lastState = stringified;
+            onUpdate(matched);
+          }
+        } else {
+          if (lastState !== 'null') {
+            lastState = 'null';
+            onUpdate(null);
+          }
+        }
+      } catch (_) {}
+    }
+  };
+
+  poll(); // immediate invocation
+  const intervalId = setInterval(poll, 1500);
+  return () => clearInterval(intervalId);
 }
 
 // ==========================================

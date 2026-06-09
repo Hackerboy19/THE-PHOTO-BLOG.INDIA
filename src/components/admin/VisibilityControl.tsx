@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getSectionVisibility, saveSectionVisibility, SectionVisibilitySettings } from '../../lib/firebase';
 import { Eye, EyeOff, RefreshCw, Save, Check } from 'lucide-react';
+import { useShutterSound } from '../../hooks/useShutterSound';
 
 export default function VisibilityControl() {
   const [visibility, setVisibility] = useState<SectionVisibilitySettings | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const playShutter = useShutterSound();
 
   useEffect(() => {
     async function load() {
@@ -17,6 +19,7 @@ export default function VisibilityControl() {
 
   const handleToggle = (key: keyof SectionVisibilitySettings) => {
     if (!visibility) return;
+    playShutter();
     setVisibility({
       ...visibility,
       [key]: !visibility[key]

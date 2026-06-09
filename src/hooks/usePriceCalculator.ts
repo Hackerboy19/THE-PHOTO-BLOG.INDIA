@@ -74,7 +74,8 @@ export function usePriceCalculator(
   selectedServices: string[],
   scale: string,
   timeline: string,
-  debounceMs: number = 300
+  debounceMs: number = 300,
+  currency: 'INR' | 'USD' = 'INR'
 ) {
   const [exchangeRate, setExchangeRate] = useState<number>(DEFAULT_EXCHANGE_RATE);
 
@@ -104,8 +105,12 @@ export function usePriceCalculator(
         totalUSD: 0,
         minINR: 0,
         maxINR: 0,
+        minUSD: 0,
+        maxUSD: 0,
         minINRFormatted: '₹0',
         maxINRFormatted: '₹0',
+        minUSDFormatted: '$0',
+        maxUSDFormatted: '$0',
         rangeText: '₹0',
         exchangeRate,
       };
@@ -122,24 +127,37 @@ export function usePriceCalculator(
     const totalUSD = baseUSD * scaleMult * timelineMult;
     
     // Core calculation range: standard budget (min) and upper contingency tier (max)
+    const minUSD = totalUSD;
+    const maxUSD = totalUSD * 1.3;
+
     const minINR = Math.round(totalUSD * exchangeRate);
     const maxINR = Math.round(totalUSD * 1.3 * exchangeRate);
 
     const minINRFormatted = `₹${minINR.toLocaleString('en-IN')}`;
     const maxINRFormatted = `₹${maxINR.toLocaleString('en-IN')}`;
-    const rangeText = `₹${minINR.toLocaleString('en-IN')} - ₹${maxINR.toLocaleString('en-IN')}`;
+    const minUSDFormatted = `$${Math.round(minUSD).toLocaleString('en-US')}`;
+    const maxUSDFormatted = `$${Math.round(maxUSD).toLocaleString('en-US')}`;
+
+    const isINR = currency === 'INR';
+    const rangeText = isINR
+      ? `${minINRFormatted} - ${maxINRFormatted}`
+      : `${minUSDFormatted} - ${maxUSDFormatted}`;
 
     return {
       baseUSD,
       totalUSD,
       minINR,
       maxINR,
+      minUSD,
+      maxUSD,
       minINRFormatted,
       maxINRFormatted,
+      minUSDFormatted,
+      maxUSDFormatted,
       rangeText,
       exchangeRate,
     };
-  }, [config, debouncedServices, debouncedScale, debouncedTimeline, exchangeRate]);
+  }, [config, debouncedServices, debouncedScale, debouncedTimeline, exchangeRate, currency]);
 
   return results;
 }

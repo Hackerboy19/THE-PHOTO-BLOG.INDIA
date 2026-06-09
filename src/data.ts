@@ -12,31 +12,36 @@ export const ABOUT_IMAGE = "https://images.unsplash.com/photo-1488161628813-0446
 export const SERVICES_DATA: Service[] = [
   {
     id: "service-1",
-    title: "Cinematic Brand Campaigns",
-    description: "High-spec, narrative-focused video campaigns engineered to create powerful emotional resonance. We handle everything from screenwriting and cinematography to bespoke luxury color grading.",
-    metric: "4.5M+ Collective Views",
-    features: ["RED & ARRI Cinema Systems", "High-End Storyboarding", "Luxury Post-Production Color Grading", "Bespoke Sound Orchestration"]
+    title: "Social Media Marketing",
+    description: "Bespoke content creation, strategic positioning, and interactive community management to elevate your digital presence and command attention.",
+    metric: "High Engagement Drives",
+    features: [
+      "Content creation and strategy",
+      "Community management",
+      "Brand Positioning"
+    ]
   },
   {
     id: "service-2",
-    title: "Premium Editorial Photography",
-    description: "Ultra-sharp, high-fidelity imagery tailored for luxury lifestyle, premium real estate, high-fashion campaigns, and architectural catalogs.",
-    metric: "120+ Published Outlets",
-    features: ["Medium Format High-Fidelity Capture", "Signature Cinematic Lighting Setup", "Detail-Oriented Color Correction", "Fine Art Prints & Digital Deliveries"]
+    title: "Performance Marketing",
+    description: "Results-driven lead generation campaigns and optimized Meta ad management engineered for consistent business growth and brand traction.",
+    metric: "Maximizing Digital ROI",
+    features: [
+      "Meta ad management",
+      "Lead generation campaigns"
+    ]
   },
   {
     id: "service-3",
-    title: "High-Impact Social & Vertical Video",
-    description: "Engineered vertical format micro-storytelling and high-retention Reels curated specifically for brand virality. We capture attention in the first 0.4 seconds.",
-    metric: "+240% Average Engagement",
-    features: ["Optimized retention hook scripts", "Dynamic, sound-synced editing styles", "Viral content strategy & audio pairing", "Platform-native grading and framing"]
-  },
-  {
-    id: "service-4",
-    title: "Elite Influencer & Brand Collaborations",
-    description: "Aligning elite digital creators, lifestyle icons, and cultural icons with immersive visual campaigns that boost brand trust and authority.",
-    metric: "40+ Elite Brand Collabs",
-    features: ["Talent Scouting & Negotiation", "Artistic Direction Alignment", "Co-Branded Immersive Experiences", "Comprehensive Campaign ROI Tracking"]
+    title: "Brand Identity",
+    description: "Custom high-end logo design, comprehensive visual identity development, and premium product packaging designs for visionary founders.",
+    metric: "Distinctive Brand Presence",
+    features: [
+      "Logo design",
+      "Branding",
+      "Visual Identity",
+      "Packaging Design"
+    ]
   }
 ];
 

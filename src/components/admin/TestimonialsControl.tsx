@@ -63,6 +63,28 @@ export default function TestimonialsControl() {
     triggerSuccess();
   };
 
+  const handleMoveUp = async (index: number) => {
+    if (index === 0) return;
+    const list = [...testimonials];
+    const temp = list[index];
+    list[index] = list[index - 1];
+    list[index - 1] = temp;
+    setTestimonials(list);
+    await saveAllTestimonials(list);
+    triggerSuccess();
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index === testimonials.length - 1) return;
+    const list = [...testimonials];
+    const temp = list[index];
+    list[index] = list[index + 1];
+    list[index + 1] = temp;
+    setTestimonials(list);
+    await saveAllTestimonials(list);
+    triggerSuccess();
+  };
+
   const handleAddNew = () => {
     const newId = `t-${Date.now()}`;
     setEditingId(newId);
@@ -238,7 +260,7 @@ export default function TestimonialsControl() {
 
       {/* Grid displays */}
       <div className="space-y-4">
-        {testimonials.map((test) => {
+        {testimonials.map((test, idx) => {
           const isHidden = (test as any).hidden;
           return (
             <div 
@@ -264,25 +286,43 @@ export default function TestimonialsControl() {
                   </div>
                 </div>
                 
-                <p className="text-xs text-zinc-400 font-sans italic leading-relaxed font-light">"{test.quote}"</p>
+                <p className="text-xs text-zinc-400 font-sans italic leading-relaxed font-light font-sans">"{test.quote}"</p>
                 
                 <div className="text-[11px] font-mono text-zinc-400 font-medium">
                   {test.author} <span className="text-zinc-500">— {test.role}</span>
                 </div>
               </div>
 
-              <div className="flex md:flex-col items-start md:items-end justify-between md:justify-center border-t md:border-t-0 border-white/5 pt-3 md:pt-0 gap-3 min-w-[125px]">
-                <div className="flex gap-1.5 self-start md:self-end">
+              <div className="flex md:flex-col items-start md:items-end justify-between md:justify-center border-t md:border-t-0 border-white/5 pt-3 md:pt-0 gap-3 min-w-[170px]">
+                <div className="flex gap-1.5 self-start md:self-end items-center">
+                  {/* Reordering buttons */}
+                  <button
+                    onClick={() => handleMoveUp(idx)}
+                    disabled={idx === 0}
+                    className="p-1 px-2 border border-white/5 disabled:opacity-20 text-zinc-400 hover:text-white hover:border-white/20 transition-colors cursor-pointer disabled:cursor-not-allowed bg-zinc-900/50 font-mono text-[9px]"
+                    title="Move Order Up"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => handleMoveDown(idx)}
+                    disabled={idx === testimonials.length - 1}
+                    className="p-1 px-2 border border-white/5 disabled:opacity-20 text-zinc-400 hover:text-white hover:border-white/20 transition-colors cursor-pointer disabled:cursor-not-allowed bg-zinc-900/50 font-mono text-[9px]"
+                    title="Move Order Down"
+                  >
+                    ▼
+                  </button>
+
                   <button
                     onClick={() => handleEditEdit(test)}
-                    className="p-1.5 border border-white/5 hover:border-white/20 text-zinc-400 hover:text-white transition-colors cursor-pointer bg-zinc-905"
+                    className="p-1.5 border border-white/5 hover:border-white/20 text-zinc-400 hover:text-white transition-colors cursor-pointer bg-zinc-900/50"
                     title="Edit Endorsement"
                   >
                     <Edit2 className="w-3 h-3" />
                   </button>
                   <button
                     onClick={() => handleDeleteItem(test.id)}
-                    className="p-1.5 border border-white/5 hover:border-red-500/20 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer bg-zinc-905"
+                    className="p-1.5 border border-white/5 hover:border-red-500/20 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer bg-zinc-900/50"
                     title="Delete Endorsement"
                   >
                     <Trash2 className="w-3 h-3" />

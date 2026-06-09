@@ -61,3 +61,45 @@
     transform: translateX(100%);
   }
 }
+
+/* Premium transmission animations */
+@keyframes laser-scan {
+  0% { top: 0%; opacity: 0.8; }
+  50% { top: 100%; opacity: 0.8; }
+  100% { top: 0%; opacity: 0.8; }
+}
+
+@keyframes radar-ping {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes draw-checkmark {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes wave-flow {
+  0% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+  100% { transform: scaleY(0.3); }
+}
+
+.animate-laser {
+  animation: laser-scan 3s infinite linear;
+}
+
+.animate-ping-slow {
+  animation: radar-ping 2.5s infinite cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-check {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: draw-checkmark 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-wave {
+  animation: wave-flow 1.5s infinite ease-in-out;
+}
+

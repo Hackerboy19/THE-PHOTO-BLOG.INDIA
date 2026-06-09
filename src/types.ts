@@ -76,3 +76,50 @@ export function validateInstagramHandle(handle: string): boolean {
   }
   return true;
 }
+
+export interface InstagramPost {
+  id: string;
+  type: string;
+  views: string;
+  likes: string;
+  imageUrl: string;
+  caption: string;
+}
+
+export interface ClientFeedbackComment {
+  id: string;
+  timestamp: string; // e.g. "01:24" for timeline reference
+  author: string;
+  text: string;
+  createdDate: string;
+}
+
+export interface ClientProofStill {
+  id: string;
+  imageUrl: string;
+  label: string;
+  feedback?: string;
+}
+
+export interface ClientProject {
+  id: string; // ID / link code (e.g. "TPB-CLIENT-85")
+  clientName: string;
+  projectTitle: string; // explicitly requested
+  status: 'scripting' | 'moodboard' | 'production' | 'post-production' | 'review' | 'delivered'; // explicitly requested
+  timelineProgress: number; // e.g. 65% (explicitly requested)
+  moodboardUrl?: string; // explicitly requested
+  proofingVideoUrl?: string; // explicitly requested
+  invoiceAmount: number; // explicitly requested
+
+  // Keeping existing keys for graceful backward compatibility with existing components:
+  projectName: string;
+  currentMilestone: 'Scripting' | 'Moodboard' | 'Production' | 'Post-Prod Edit' | 'Final Review';
+  milestoneStatus: 'pending' | 'in-progress' | 'completed';
+  progressPercentage: number;
+  lastUpdated: string;
+  draftVideoUrl: string; // embed video URL, default mock video if empty
+  feedbackComments: ClientFeedbackComment[];
+  proofStills: ClientProofStill[];
+  clientPhone?: string;
+}
+

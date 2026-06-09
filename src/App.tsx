@@ -49,6 +49,8 @@ import WhatsAppProfileCard from './components/WhatsAppProfileCard';
 import { ContactFormData, PortfolioItem } from './types';
 import { Magnetic, SplitTextReveal } from './components/EditorialAnimations';
 import EditorialDivider from './components/EditorialDivider';
+import { useShutterSound } from './hooks/useShutterSound';
+import ZoomableLightboxImage from './components/ZoomableLightboxImage';
 
 // Admin System Imports
 import { 
@@ -67,6 +69,7 @@ import {
 } from './lib/firebase';
 const AdminLogin = React.lazy(() => import('./components/admin/AdminLogin'));
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));
+const ClientDashboard = React.lazy(() => import('./components/ClientDashboard'));
 
 // Sophisticated editorial motion variants
 const fadeInUpVariants = {
@@ -141,9 +144,15 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isCategoryChanging, setIsCategoryChanging] = useState<boolean>(false);
   
-  // Admin Navigation and Session States
+  // Play subtle 'shutter' click sound effect when user changes portfolio categories
+  useShutterSound(selectedCategory);
+  
+  // Admin & Dashboard Navigation and Session States
   const [isAdminRoute, setIsAdminRoute] = useState(
     window.location.pathname === '/admin' || window.location.hash === '#admin'
+  );
+  const [isDashboardRoute, setIsDashboardRoute] = useState(
+    window.location.pathname === '/dashboard' || window.location.hash === '#dashboard'
   );
   const [activeAdminUser, setActiveAdminUser] = useState<{ email: string; displayName: string } | null>(getMockUser());
 
@@ -151,7 +160,9 @@ export default function App() {
   useEffect(() => {
     const handleLocationCoordinates = () => {
       const isOk = window.location.pathname === '/admin' || window.location.hash === '#admin';
+      const isDash = window.location.pathname === '/dashboard' || window.location.hash === '#dashboard';
       setIsAdminRoute(isOk);
+      setIsDashboardRoute(isDash);
     };
 
     window.addEventListener('popstate', handleLocationCoordinates);
@@ -240,6 +251,33 @@ export default function App() {
 
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [sendingForm, setSendingForm] = useState(false);
+
+  // Premium Cursor and Scroll Parallax States
+  const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
+  const [isHoveredInspect, setIsHoveredInspect] = useState(false);
+  const [isPointerOnScreen, setIsPointerOnScreen] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const updateMouse = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      setIsPointerOnScreen(true);
+    };
+    const handleMouseLeave = () => {
+      setIsPointerOnScreen(false);
+    };
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('mousemove', updateMouse);
+    document.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', updateMouse);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // Lightbox Modal state
   const [selectedPortfolioItem, setSelectedPortfolioItem] = useState<PortfolioItem | null>(null);
@@ -479,6 +517,36 @@ export default function App() {
     );
   }
 
+  if (isDashboardRoute) {
+    return (
+      <div className="relative min-h-screen bg-[#050507] text-[#ebebeb] overflow-x-hidden">
+        {/* Subdued client pre-prod header */}
+        <header className="bg-black/95 border-b border-white/10 py-5 px-6 md:px-12 z-50">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <button
+              onClick={navigateToHome}
+              className="text-xs font-mono tracking-widest text-[#8696a0] hover:text-[#ebebeb] transition-colors uppercase cursor-pointer"
+            >
+              ← Back to TPB India Site
+            </button>
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.22em]">
+              Pre-Production Client Enclave
+            </div>
+          </div>
+        </header>
+
+        <React.Suspense fallback={
+          <div className="flex flex-col justify-center items-center py-24 text-zinc-500 font-mono text-xs gap-3">
+            <RefreshCw className="w-5 h-5 animate-spin text-white" />
+            <span>CONNECTING LIVE STUDIO PROTOCOLS...</span>
+          </div>
+        }>
+          <ClientDashboard />
+        </React.Suspense>
+      </div>
+    );
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -649,6 +717,7 @@ export default function App() {
             src={heroConfig?.bgUrl || HERO_BACKGROUND}
             alt="THE PHOTO BLOG.INDIA.1 Cinematic Setting"
             className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.35] lg:brightness-60"
+            style={{ transform: `translateY(${scrollY * 0.35}px)`, willChange: 'transform' }}
             referrerPolicy="no-referrer"
           />
           
@@ -660,6 +729,7 @@ export default function App() {
             loop
             playsInline
             className="absolute inset-0 w-full h-full object-cover object-center opacity-30 mix-blend-screen pointer-events-none filter saturate-50 contrast-125 brightness-50"
+            style={{ transform: `translateY(${scrollY * 0.35}px)`, willChange: 'transform' }}
           >
             {heroConfig?.videoUrl ? (
               <source src={heroConfig.videoUrl} type="video/mp4" />
@@ -756,10 +826,18 @@ export default function App() {
       </section>
 
       {/* 2. ABOUT COMPANY SECTION */}
-      {(!sectionVisibility || sectionVisibility.about) && (
-        <>
-          <EditorialDivider label="01 // THE AGENCY STATEMENT" />
-          <motion.section 
+      <AnimatePresence>
+        {(!sectionVisibility || sectionVisibility.about) && (
+          <motion.div
+            key="about-stage"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <EditorialDivider label="01 // THE AGENCY STATEMENT" />
+            <motion.section 
             id="about" 
             className="py-24 md:py-32 bg-black px-6 md:px-12 relative"
             initial={{ opacity: 0, y: 50 }}
@@ -802,25 +880,34 @@ export default function App() {
 
             {/* About Text Content Column */}
             <div className="lg:col-span-7 space-y-6">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">THE AGENCY</span>
+              <span className="text-[10px] font-mono tracking-[0.2em] text-[#00a884] uppercase">THE AGENCY</span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white leading-tight">
-                A high-end marketing agency focusing on <span className="italic font-normal text-zinc-350">immersive, cinematic</span> brand alignment.
+                We don’t just market. <span className="italic font-normal text-zinc-350">We build brands.</span> <span className="block mt-2 text-xl sm:text-2xl font-sans font-semibold tracking-wider text-zinc-400">Jaipur rooted. Growing globally.</span>
               </h2>
               
-              <div className="text-zinc-[#c8c8c8] text-sm md:text-base leading-relaxed space-y-4">
+              <div className="text-zinc-400 text-sm md:text-base leading-relaxed space-y-4 font-sans">
                 {aboutSettings?.backstory ? (
-                  <p className="whitespace-pre-line font-sans">{aboutSettings.backstory}</p>
+                  <p className="whitespace-pre-line">{aboutSettings.backstory}</p>
                 ) : (
-                  <>
-                    <p className="text-zinc-400">
-                      Founded under the creative vision of premier Indian media designers, **THE PHOTO BLOG.INDIA.1** has grown into an elite creative firm. We reject the standard, dry, cookie-cutter social media formulas. We treat every social post, video script, and campaign drop as a high-end cinematic editorial launch.
-                    </p>
-
-                    <p className="text-zinc-400">
-                      We connect luxury international hotel chains, elite lifestyle watch labels, artisanal design houses, and commercial vehicles with audiences who demand high quality. Your brand deserves to be documented through a lens that respects complexity, depth, and absolute aesthetic standards.
-                    </p>
-                  </>
+                  <p>
+                    We turn your brand into a story which digital media celebrates. A Jaipur-rooted marketing agency thriving to grow brands globally. We take immense pride in shaping businesses led by women and visionary founders.
+                  </p>
                 )}
+              </div>
+
+              {/* Founder Profile Block */}
+              <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row gap-5 items-start">
+                <div className="w-14 h-14 shrink-0 border border-white/10 bg-zinc-900 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-[#00a884]/10" />
+                  <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200" alt="Muskan Mundhra" className="w-full h-full object-cover filter grayscale" />
+                </div>
+                <div>
+                  <h4 className="font-serif text-white text-base font-semibold">Muskan Mundhra</h4>
+                  <p className="text-[10px] font-mono text-[#00a884] uppercase tracking-wider">Founder & Creative Director</p>
+                  <p className="text-zinc-400 text-xs font-sans leading-relaxed mt-2 font-light">
+                    Our founder, Muskan Mundhra, completed her M.Sc in Entrepreneurship & Innovation Management from the University of Liverpool before taking the plunge to pursue her dream of shaping the digital world through strategy-driven and impactful branding.
+                  </p>
+                </div>
               </div>
 
               {/* Core facts blocks */}
@@ -843,14 +930,23 @@ export default function App() {
 
           </div>
         </motion.section>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 3. OUR SERVICES SECTION */}
-      {(!sectionVisibility || sectionVisibility.services) && (
-        <>
-          <EditorialDivider label="02 // CORE CAPABILITIES" />
-          <motion.section 
+      <AnimatePresence>
+        {(!sectionVisibility || sectionVisibility.services) && (
+          <motion.div
+            key="services-stage"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <EditorialDivider label="02 // CORE CAPABILITIES" />
+            <motion.section 
             id="services" 
             className="py-24 md:py-32 bg-transparent px-6 md:px-12 relative"
             initial="hidden"
@@ -921,16 +1017,56 @@ export default function App() {
                 ))}
             </div>
 
+            {/* Niche Industry Alignment Section (Explicitly requested sectors) */}
+            <motion.div 
+              variants={fadeInUpVariants}
+              className="mt-20 pt-16 border-t border-white/10 space-y-8"
+            >
+              <div>
+                <span className="text-[10px] font-mono tracking-[0.2em] text-[#00a884] uppercase block">Strategic Focus</span>
+                <h3 className="text-2xl sm:text-3xl font-serif text-white mt-1">Niche Industries We Serve</h3>
+                <p className="text-sm text-zinc-400 max-w-2xl mt-2 font-sans">
+                  We specialize in tailoring high-end branding, content strategy, and meta campaigns for specific industry sectors. By understanding the intricate nuances of these spaces, we generate authentic digital momentum.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {[
+                  { name: "Jewellery", desc: "Heritage artistry & absolute luxury positioning" },
+                  { name: "D2C", desc: "Conversion focused scale & aesthetic design" },
+                  { name: "Food and restaurant", desc: "Sensory rich storytelling and viral loops" },
+                  { name: "MSMEs", desc: "Strategy driven growth and business traction" },
+                  { name: "Community", desc: "Fostering tribal loyalty & authentic engagement" }
+                ].map((ind, iIdx) => (
+                  <div key={iIdx} className="bg-[#0a0a0a] border border-white/5 hover:border-white/20 p-6 transition-all group relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-[2px] h-0 bg-[#00a884] group-hover:h-full transition-all duration-300" />
+                    <span className="text-xs font-mono text-zinc-500 block mb-2">0{iIdx + 1} //</span>
+                    <h4 className="text-lg font-serif text-white group-hover:text-[#00a884] transition-colors">{ind.name}</h4>
+                    <p className="text-[11px] text-zinc-550 mt-2 font-sans leading-relaxed">{ind.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
           </div>
         </motion.section>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 4. DYNAMIC INTERACTIVE ESTIMATOR & CAMPAIGN BUILDER (Requested Action flow) */}
-      {(!sectionVisibility || sectionVisibility.estimator) && (
-        <>
-          <EditorialDivider label="03 // DIGITAL ROADMAP CONFIGURATOR" />
-          <motion.section 
+      <AnimatePresence>
+        {(!sectionVisibility || sectionVisibility.estimator) && (
+          <motion.div
+            key="estimator-stage"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <EditorialDivider label="03 // DIGITAL ROADMAP CONFIGURATOR" />
+            <motion.section 
             id="estimator" 
             className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden"
             initial={{ opacity: 0, y: 50 }}
@@ -950,14 +1086,23 @@ export default function App() {
             <CampaignEstimator onIntegrate={handleEstimatorIntegration} />
           </div>
         </motion.section>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 5. WHY CHOOSE US SECTION */}
-      {(!sectionVisibility || sectionVisibility.whyUs) && (
-        <>
-          <EditorialDivider label="04 // CREATIVE VALUE PROPOSITION" />
-          <motion.section 
+      <AnimatePresence>
+        {(!sectionVisibility || sectionVisibility.whyUs) && (
+          <motion.div
+            key="why-us-stage"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <EditorialDivider label="04 // CREATIVE VALUE PROPOSITION" />
+            <motion.section 
             id="why-us" 
             className="py-24 md:py-32 bg-[#060606] px-6 md:px-12 relative"
             initial="hidden"
@@ -1025,14 +1170,23 @@ export default function App() {
 
           </div>
         </motion.section>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 6. CLIENT TESTIMONIALS SECTION */}
-      {(!sectionVisibility || sectionVisibility.testimonials) && (
-        <>
-          <EditorialDivider label="05 // EXECUTIVE ENDORSEMENTS" />
-          <motion.section 
+      <AnimatePresence>
+        {(!sectionVisibility || sectionVisibility.testimonials) && (
+          <motion.div
+            key="testimonials-stage"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <EditorialDivider label="05 // EXECUTIVE ENDORSEMENTS" />
+            <motion.section 
             className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1093,14 +1247,23 @@ export default function App() {
 
           </div>
         </motion.section>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 7. LATEST PORTFOLIO COLLABS GRID */}
-      {(!sectionVisibility || sectionVisibility.portfolio) && (
-        <>
-          <EditorialDivider label="06 // CINEMATIC PORTFOLIO" />
-          <motion.section 
+      <AnimatePresence>
+        {(!sectionVisibility || sectionVisibility.portfolio) && (
+          <motion.div
+            key="portfolio-stage"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <EditorialDivider label="06 // CINEMATIC PORTFOLIO" />
+            <motion.section 
             id="portfolio" 
             className="py-24 md:py-32 bg-[#080808] px-6 md:px-12"
             initial="hidden"
@@ -1203,18 +1366,38 @@ export default function App() {
                         <div 
                           className="aspect-[16/10] overflow-hidden relative cursor-pointer group/img"
                           onClick={() => setSelectedPortfolioItem(item)}
+                          onMouseEnter={() => setIsHoveredInspect(true)}
+                          onMouseLeave={() => setIsHoveredInspect(false)}
                         >
-                          <picture>
-                            <source srcSet={getOptimizedImageUrl(item.imageUrl, 1080, 'avif')} type="image/avif" />
-                            <source srcSet={getOptimizedImageUrl(item.imageUrl, 1080, 'webp')} type="image/webp" />
+                          <div className="relative w-full h-full overflow-hidden">
+                            {/* Standard Main Image Layer */}
                             <img
                               src={getOptimizedImageUrl(item.imageUrl, 1080, 'auto')}
                               alt={item.title}
-                              className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-700"
+                              className="w-full h-full object-cover grayscale brightness-90 group-hover/img:grayscale-0 group-hover/img:scale-[1.02] transition-all duration-500 relative z-10"
                               referrerPolicy="no-referrer"
                               loading="lazy"
                             />
-                          </picture>
+
+                            {/* Red Aberration Layer (Visible on hover) */}
+                            <img
+                              src={getOptimizedImageUrl(item.imageUrl, 1080, 'auto')}
+                              alt=""
+                              className="absolute inset-0 w-full h-full object-cover mix-blend-screen scale-[1.03] translate-x-[2.5px] opacity-0 group-hover/img:opacity-75 transition-all duration-300 filter hue-rotate-[120deg] saturate-200 z-20 pointer-events-none"
+                              referrerPolicy="no-referrer"
+                            />
+
+                            {/* Cyan Aberration Layer (Visible on hover) */}
+                            <img
+                              src={getOptimizedImageUrl(item.imageUrl, 1080, 'auto')}
+                              alt=""
+                              className="absolute inset-0 w-full h-full object-cover mix-blend-screen scale-[1.03] -translate-x-[2.5px] opacity-0 group-hover/img:opacity-75 transition-all duration-300 filter hue-rotate-[240deg] saturate-200 z-20 pointer-events-none"
+                              referrerPolicy="no-referrer"
+                            />
+
+                            {/* Brutalist analog scanline overlay (Visible on hover) */}
+                            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.35)_50%)] bg-[size:100%_4px] opacity-0 group-hover/img:opacity-100 transition-all duration-300 pointer-events-none z-30" />
+                          </div>
                           
                           {/* Luxury editorial hover cue overlay */}
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
@@ -1252,14 +1435,23 @@ export default function App() {
   
           </div>
         </motion.section>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 8. INSTAGRAM showcase SECTION (Required explicitly in request) */}
-      {(!sectionVisibility || sectionVisibility.feed) && (
-        <>
-          <EditorialDivider label="07 // REALTIME DIGITAL SYNDICATION" />
-          <motion.section 
+      <AnimatePresence>
+        {(!sectionVisibility || sectionVisibility.feed) && (
+          <motion.div
+            key="instagram-stage"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <EditorialDivider label="07 // REALTIME DIGITAL SYNDICATION" />
+            <motion.section 
             id="instagram" 
             className="py-24 bg-black px-6 md:px-12 relative"
             initial={{ opacity: 0, y: 50 }}
@@ -1280,14 +1472,23 @@ export default function App() {
             <InstagramGrid />
           </div>
         </motion.section>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 9. CONTACT CTA SECTION */}
-      {(!sectionVisibility || sectionVisibility.contact) && (
-        <>
-          <EditorialDivider label="08 // CLIENT DIRECT OFFICE" />
-          <motion.section 
+      <AnimatePresence>
+        {(!sectionVisibility || sectionVisibility.contact) && (
+          <motion.div
+            key="contact-stage"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <EditorialDivider label="08 // CLIENT DIRECT OFFICE" />
+            <motion.section 
             id="contact" 
             className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 relative"
             initial={{ opacity: 0, y: 50 }}
@@ -1320,7 +1521,7 @@ export default function App() {
               <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest block">Alternate Hotline</span>
               <div className="flex gap-4 items-center justify-between text-[11px] font-mono text-zinc-400">
                 <span>JAIPUR CREATIVE HQ LINE</span>
-                <a href="tel:+919876543210" className="text-white hover:underline">+91 98765 43210</a>
+                <a href="tel:+919145961226" className="text-white hover:underline">+91 91459 61226</a>
               </div>
             </div>
           </div>
@@ -1455,20 +1656,58 @@ export default function App() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="space-y-8 py-8 text-center"
                 >
-                  <div className="w-16 h-16 rounded-none bg-white/10 border border-white/20 flex items-center justify-center mx-auto text-white">
-                    <FileCheck className="w-8 h-8" />
+                  {/* Premium Cinematic Scanning / Transmission Visual Animation */}
+                  <div className="relative w-36 h-36 mx-auto flex items-center justify-center">
+                    {/* Concentric radar waves */}
+                    <div className="absolute inset-0 rounded-full border border-[#00a884]/20 animate-ping-slow pointer-events-none" />
+                    <div className="absolute inset-4 rounded-full border border-[#00a884]/10 animate-ping-slow pointer-events-none" style={{ animationDelay: '0.8s' }} />
+                    <div className="absolute inset-8 rounded-full border border-white/5 animate-ping-slow pointer-events-none" style={{ animationDelay: '1.6s' }} />
+
+                    {/* Laser Scanner Square Grid Container */}
+                    <div className="relative w-24 h-24 bg-black border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl shadow-[#00a884]/15">
+                      {/* Grid background scan lines */}
+                      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:8px_8px]" />
+                      
+                      {/* Moving laser sweeping line */}
+                      <div className="absolute left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00a884] to-transparent shadow-[0_0_8px_#00a884] animate-laser z-10 pointer-events-none" />
+
+                      {/* Animated Draw-On Success Vector Checkmark */}
+                      <svg className="w-12 h-12 text-[#00a884] relative z-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <circle cx="12" cy="12" r="10" className="opacity-20" />
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          d="M9 12l2 2 4-4" 
+                          className="animate-check"
+                          style={{ strokeDasharray: 20, strokeDashoffset: 20 }}
+                        />
+                      </svg>
+                      
+                      {/* Corner Brutalis details */}
+                      <div className="absolute top-1 left-1 w-1.5 h-1.5 border-t border-l border-zinc-500" />
+                      <div className="absolute top-1 right-1 w-1.5 h-1.5 border-t border-r border-zinc-500" />
+                      <div className="absolute bottom-1 left-1 w-1.5 h-1.5 border-b border-l border-zinc-500" />
+                      <div className="absolute bottom-1 right-1 w-1.5 h-1.5 border-b border-r border-zinc-500" />
+                    </div>
                   </div>
 
                   <div className="space-y-3">
-                    <h3 className="text-2xl font-serif text-white">Transmission Successful</h3>
-                    <p className="text-xs text-zinc-450 max-w-sm mx-auto">
-                      Your campaign configuration and parameters have been logged. The creative directors of **THE PHOTO BLOG.INDIA.1** are reviewing the assets.
+                    <h3 className="text-2xl font-serif text-white tracking-tight">Transmission Successful</h3>
+                    <p className="text-xs text-zinc-400 max-w-sm mx-auto font-sans leading-relaxed">
+                      Your campaign configuration and parameters have been logged. The creative directors of <span className="text-[#00a884] font-medium">THE PHOTO BLOG.INDIA.1</span> are reviewing the assets.
                     </p>
                   </div>
 
                   {/* Digital Receipt breakdown */}
-                  <div className="bg-[#060606] border border-white/10 rounded-none p-6 text-left max-w-md mx-auto space-y-4 text-xs font-mono">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="bg-[#050505] border border-white/5 rounded-none p-6 text-left max-w-md mx-auto space-y-4 text-xs font-mono relative overflow-hidden">
+                    {/* Subtle digital background indicator */}
+                    <div className="absolute top-2 right-2 flex gap-1 items-center opacity-30">
+                      <span className="w-1 h-3 bg-emerald-500 animate-wave" style={{ animationDelay: '0.1s' }} />
+                      <span className="w-1 h-4 bg-emerald-500 animate-wave" style={{ animationDelay: '0.3s' }} />
+                      <span className="w-1 h-2 bg-emerald-500 animate-wave" style={{ animationDelay: '0.2s' }} />
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
                       <span className="text-zinc-500">CLIENT</span>
                       <span className="text-zinc-100 font-sans font-semibold">{formData.fullName}</span>
                     </div>
@@ -1512,7 +1751,7 @@ export default function App() {
                     </button>
 
                     <a
-                      href="https://wa.me/919876543210?text=Hi!%20Just%20submitted%20our%20campaign%20brief%20on%20your%20website%20under%20the%20name%20of%20"
+                      href={`https://wa.me/919145961226?text=Hi!%20Just%20submitted%20our%20campaign%20brief%20on%20your%20website%20under%20the%20name%20of%20${encodeURIComponent(formData.fullName)}%20for%20${encodeURIComponent(formData.companyName || 'our brand')}.`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-black py-2.5 px-4 rounded-none font-bold text-xs transition-all uppercase gap-1"
@@ -1529,8 +1768,9 @@ export default function App() {
 
         </div>
       </motion.section>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 10. ELITE FOOTER */}
       <EditorialDivider label="09 // END CREDITS & ARCHIVE" />
@@ -1638,17 +1878,19 @@ export default function App() {
               {/* Main Image Container */}
               <div className="flex-1 h-full max-h-[50vh] lg:max-h-[70vh] flex items-center justify-center relative overflow-hidden bg-black/60 border border-white/5 p-2">
                 <AnimatePresence mode="wait">
-                  <motion.img
+                  <motion.div
                     key={selectedPortfolioItem.id}
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.4 }}
-                    src={selectedPortfolioItem.imageUrl}
-                    alt={selectedPortfolioItem.title}
-                    className="max-w-full max-h-full object-contain"
-                    referrerPolicy="no-referrer"
-                  />
+                    className="w-full h-full flex items-center justify-center"
+                  >
+                    <ZoomableLightboxImage 
+                      src={selectedPortfolioItem.imageUrl}
+                      alt={selectedPortfolioItem.title}
+                    />
+                  </motion.div>
                 </AnimatePresence>
               </div>
 
@@ -1763,6 +2005,28 @@ export default function App() {
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* 13. CINEMATIC LUXURY PHYSICS CURSOR OVERLAY */}
+      {isPointerOnScreen && (
+        <motion.div
+          animate={{
+            x: mousePos.x - (isHoveredInspect ? 40 : 12),
+            y: mousePos.y - (isHoveredInspect ? 40 : 12),
+            width: isHoveredInspect ? 80 : 24,
+            height: isHoveredInspect ? 80 : 24,
+            backgroundColor: isHoveredInspect ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0)',
+            borderColor: isHoveredInspect ? 'rgba(255, 255, 255, 0)' : 'rgba(255, 255, 255, 0.8)',
+          }}
+          transition={{ type: 'spring', damping: 32, stiffness: 380, mass: 0.5 }}
+          className="fixed pointer-events-none z-[9999] rounded-full border mix-blend-difference hidden md:flex items-center justify-center overflow-hidden"
+        >
+          {isHoveredInspect && (
+            <span className="text-[10px] font-mono tracking-widest text-black font-black select-none pointer-events-none uppercase">
+              INSPECT
+            </span>
+          )}
+        </motion.div>
+      )}
 
     </motion.div>
   );

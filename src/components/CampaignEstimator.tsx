@@ -8,6 +8,7 @@ import { Sparkles, Video, Camera, Compass, Users, CheckCircle, ArrowRight, Print
 import { getEstimatorConfig, EstimatorSettings } from '../lib/firebase';
 import { usePriceCalculator } from '../hooks/usePriceCalculator';
 import { motion, AnimatePresence } from 'motion/react';
+import { AudioSynth } from './ClientDashboard';
 
 interface CampaignEstimatorProps {
   onIntegrate: (summary: string, serviceName: string, budgetEstimate: string) => void;
@@ -17,8 +18,36 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
   const [selectedServices, setSelectedServices] = useState<string[]>(['cinematic-video']);
   const [campaignScale, setCampaignScale] = useState<'boutique' | 'mid' | 'luxury'>('mid');
   const [timeline, setTimeline] = useState<'fast' | 'standard' | 'retainer'>('standard');
+  const [selectedMood, setSelectedMood] = useState<string>('moody-heritage');
+  const [selectedStills, setSelectedStills] = useState<number[]>([0, 1, 2, 3]);
+  const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [estConfig, setEstConfig] = useState<EstimatorSettings | null>(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
+
+  const moodStillsData: Record<string, Array<{ id: string; label: string; img: string }>> = {
+    'brutalist-neon': [
+      { id: 'bn-1', label: 'Cyan cyber shadows', img: 'https://images.unsplash.com/photo-1547891654-e66ed7edd96c?auto=format&fit=crop&q=80&w=400' },
+      { id: 'bn-2', label: 'Slick neon reflection', img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=400' },
+      { id: 'bn-3', label: 'Raw concrete shapes', img: 'https://images.unsplash.com/photo-1515260268569-9271009adfdb?auto=format&fit=crop&q=80&w=400' },
+      { id: 'bn-4', label: 'Industrial cold steel', img: 'https://images.unsplash.com/photo-1543157145-f78c636d023d?auto=format&fit=crop&q=80&w=400' },
+    ],
+    'moody-heritage': [
+      { id: 'mh-1', label: 'Vintage analog texture', img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=400' },
+      { id: 'mh-2', label: 'Gothic architecture angle', img: 'https://images.unsplash.com/photo-1471180625745-944903837c22?auto=format&fit=crop&q=80&w=400' },
+      { id: 'mh-3', label: 'Faded mahogany details', img: 'https://images.unsplash.com/photo-1473163928189-364b2c4e1135?auto=format&fit=crop&q=80&w=400' },
+      { id: 'mh-4', label: 'Analogue vehicle shadows', img: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=400' },
+    ],
+    'gloss-luxury': [
+      { id: 'gl-1', label: 'Soft backlit satin bloom', img: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=400' },
+      { id: 'gl-2', label: 'Polished brand showcase', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=400' },
+      { id: 'gl-3', label: 'Clean marble product balance', img: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=400' },
+      { id: 'gl-4', label: 'Refracted crystal prisms', img: 'https://images.unsplash.com/photo-1481349518771-20055b2a7b24?auto=format&fit=crop&q=80&w=400' },
+    ]
+  };
+
+  useEffect(() => {
+    setSelectedStills([0, 1, 2, 3]);
+  }, [selectedMood]);
 
   useEffect(() => {
     async function fetchPricing() {
@@ -61,7 +90,8 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
     selectedServices,
     campaignScale,
     timeline,
-    100 // Debounce 100ms for smooth transitions
+    100, // Debounce 100ms for smooth transitions
+    currency
   );
 
   const calculatedMetrics = useMemo(() => {
@@ -99,8 +129,15 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
 
     const scaleText = campaignScale === 'boutique' ? 'Boutique Scale' : campaignScale === 'mid' ? 'Premium Scale' : 'Luxury National Scale';
     const timelineText = timeline === 'fast' ? 'Rush delivery (< 2 weeks)' : timeline === 'standard' ? 'Standard (4-6 weeks)' : 'Long-term Retainer';
+    const moodLabel = selectedMood === 'brutalist-neon' ? 'Brutalist Neon' : selectedMood === 'moody-heritage' ? 'Moody Heritage' : 'High-Gloss Luxury';
+    
+    // Read corresponding selected moodboard stills
+    const activeStills = moodStillsData[selectedMood] || [];
+    const canvasAssets = selectedStills.length > 0 
+      ? ` [Moodboard Stills: ${selectedStills.map(idx => activeStills[idx]?.label).join(' | ')}]` 
+      : '';
 
-    const summary = `Selected Campaign Elements: ${serviceNames}. Scale: ${scaleText}. Schedule: ${timelineText}. Projected Specs: ${calculatedMetrics.crewSize} using ${calculatedMetrics.gearSpec}.`;
+    const summary = `Selected Campaign Elements: ${serviceNames}. Scale: ${scaleText}. Schedule: ${timelineText}. Creative Aesthetic Vibe: ${moodLabel}${canvasAssets}. Projected Specs: ${calculatedMetrics.crewSize} using ${calculatedMetrics.gearSpec}.`;
     
     onIntegrate(summary, serviceNames, priceStats.rangeText);
   };
@@ -113,12 +150,19 @@ export default function CampaignEstimator({ onIntegrate }: CampaignEstimatorProp
 
     const scaleText = campaignScale === 'boutique' ? 'Boutique Highlight' : campaignScale === 'mid' ? 'Premium Brand Showcase' : 'National Digital Takeover';
     const scheduleText = timeline === 'fast' ? 'Rush delivery (< 2 weeks)' : timeline === 'standard' ? 'Standard (4-6 weeks)' : 'Long-term Retainer';
+    const moodLabel = selectedMood === 'brutalist-neon' ? 'Brutalist Neon' : selectedMood === 'moody-heritage' ? 'Moody Heritage' : 'High-Gloss Luxury';
+
+    const activeStills = moodStillsData[selectedMood] || [];
+    const canvasAssets = selectedStills.length > 0 
+      ? `\n✦ MOODBOARD TILES: ${selectedStills.map(idx => activeStills[idx]?.label).join(' | ')}`
+      : '';
 
     const text = `Hi Muskan! We just configured a custom photoshoot/videography campaign on your estimator:
   
 ✦ DELIVERABLES: ${selectedLabels}
 ✦ DIRECTING SCALE: ${scaleText}
 ✦ PRODUCTION WINDOW: ${scheduleText}
+✦ CREATIVE ATMOSPHERE: ${moodLabel}${canvasAssets}
 ✦ PROJECTED INVESTMENT: ${priceStats.rangeText}
 ✦ EXPECTED CREW: ${calculatedMetrics.crewSize}
 ✦ EXPECTED CAMERA RIG: ${calculatedMetrics.gearSpec}
@@ -198,8 +242,12 @@ We'd love to lock in our package and schedule an introduction call!`;
                 {(['fast', 'standard', 'retainer'] as const).map(time => (
                   <button
                     key={time}
-                    onClick={() => setTimeline(time)}
-                    className={`flex-1 text-[10px] uppercase tracking-widest py-2 font-mono transition-all ${
+                    type="button"
+                    onClick={() => {
+                      setTimeline(time);
+                      AudioSynth.playClick();
+                    }}
+                    className={`flex-1 text-[10px] uppercase tracking-widest py-2 font-mono transition-all cursor-pointer ${
                       timeline === time
                         ? 'bg-zinc-800 text-white'
                         : 'text-zinc-400 hover:text-white'
@@ -211,13 +259,149 @@ We'd love to lock in our package and schedule an introduction call!`;
               </div>
             </div>
           </div>
+
+          {/* Campaign Moodboard Selection */}
+          <div className="space-y-6 pt-6 border-t border-zinc-900">
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-zinc-500 font-mono block">Step 02 / Creative Aesthetic Canvas</span>
+              <h4 className="text-sm font-serif text-white mt-1">Determine Creative Vibe</h4>
+              <p className="text-[11px] text-zinc-400 font-light mt-0.5 leading-normal">Select a curated palette format. This determines set construction styling, cameras and color curves.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                { 
+                  id: 'brutalist-neon', 
+                  label: 'Brutalist Neon', 
+                  desc: 'High contrast shadowplay, cyber tints, dramatic backlight, industrial raw accents.',
+                  img: 'https://images.unsplash.com/photo-1547891654-e66ed7edd96c?auto=format&fit=crop&q=80&w=350'
+                },
+                { 
+                  id: 'moody-heritage', 
+                  label: 'Moody Heritage', 
+                  desc: 'Warm analogue tones, rich texture grains, sepia highlight bleed, cinematic nostalgia.',
+                  img: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=350'
+                },
+                { 
+                  id: 'gloss-luxury', 
+                  label: 'High-Gloss Luxury', 
+                  desc: 'Soft golden hours, ultra-sharp detail structures, immaculate studio balance, dreamlike bloom.',
+                  img: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=350'
+                }
+              ].map(mood => {
+                const isSelected = selectedMood === mood.id;
+                return (
+                  <button
+                    key={mood.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedMood(mood.id);
+                      AudioSynth.playShutter();
+                    }}
+                    className={`flex flex-col text-left border relative overflow-hidden transition-all group cursor-pointer ${
+                      isSelected ? 'border-white bg-zinc-900/60' : 'border-zinc-900 bg-[#060606] hover:border-zinc-800'
+                    }`}
+                  >
+                    <div className="aspect-[16/10] overflow-hidden relative w-full bg-zinc-950">
+                      <img 
+                        src={mood.img} 
+                        alt={mood.label} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80" 
+                        referrerPolicy="no-referrer"
+                      />
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <span className="text-[9px] font-mono tracking-widest text-black bg-white select-none px-2 py-1 font-bold">
+                            ACTIVE PROFILE
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3 space-y-1">
+                      <h5 className="text-[11px] font-mono uppercase font-bold text-white tracking-wide">{mood.label}</h5>
+                      <p className="text-[10px] text-zinc-500 font-sans leading-tight font-light">{mood.desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Interactive Moodboard Tile Builder step */}
+            <div className="border border-white/5 bg-black/40 p-4 space-y-3.5">
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.2em] text-[#00a884] font-mono block">Canvas Builder // Interactive Tactile Selection</span>
+                <h5 className="text-xs font-serif text-zinc-300 mt-1">Refine Aesthetic Board</h5>
+                <p className="text-[10px] text-zinc-500 font-sans leading-relaxed">Toggle individual mood stills to customize your pre-production editorial profile.</p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                {(moodStillsData[selectedMood] || []).map((still, idx) => {
+                  const isIncluded = selectedStills.includes(idx);
+                  return (
+                    <button
+                      key={still.id}
+                      type="button"
+                      onClick={() => {
+                        AudioSynth.playClick();
+                        setSelectedStills(prev => {
+                          if (prev.includes(idx)) {
+                            if (prev.length === 1) return prev; // Keep at least one
+                            return prev.filter(x => x !== idx);
+                          }
+                          return [...prev, idx].sort((a,b)=>a-b);
+                        });
+                      }}
+                      className={`relative aspect-[4/3] overflow-hidden group text-left border transition-all ${
+                        isIncluded 
+                          ? 'border-white filter-none' 
+                          : 'border-zinc-900 opacity-40 hover:opacity-75 grayscale'
+                      }`}
+                    >
+                      <img 
+                        src={still.img} 
+                        alt={still.label} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent flex flex-col justify-end p-2">
+                        <span className="text-[7.5px] font-mono uppercase text-zinc-400 truncate tracking-wide bg-black/40 px-1 py-0.5 rounded-none">{still.label}</span>
+                      </div>
+                      <div className="absolute top-1.5 right-1.5 h-3.5 w-3.5 border border-white flex items-center justify-center text-[8px] font-mono font-bold bg-black text-white">
+                        {isIncluded ? '✓ font-bold' : ''}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Preview Card */}
         <div className="w-full lg:w-80 flex flex-col justify-between bg-[#0e0e0e] border border-faint p-6 relative">
           <div className="space-y-5">
             <div>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-mono block">Project Estimate</span>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-mono block">Project Estimate</span>
+                
+                {/* Instant Currency Toggle switch */}
+                <div className="flex bg-[#070707] border border-zinc-800 p-0.5 text-[9px] font-mono rounded-none">
+                  <button
+                    type="button"
+                    onClick={() => { setCurrency('INR'); AudioSynth.playClick(); }}
+                    className={`px-2 py-0.5 uppercase transition-all tracking-wider font-bold cursor-pointer ${currency === 'INR' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+                  >
+                    INR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setCurrency('USD'); AudioSynth.playClick(); }}
+                    className={`px-2 py-0.5 uppercase transition-all tracking-wider font-bold cursor-pointer ${currency === 'USD' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+                  >
+                    USD
+                  </button>
+                </div>
+              </div>
               
               {/* Animated value rollout */}
               <motion.div 
@@ -420,7 +604,7 @@ We'd love to lock in our package and schedule an introduction call!`;
                   </div>
                   <div>
                     <span className="text-zinc-400 block font-bold mb-1">✦ AGENCY SIGNATURE</span>
-                    <p className="mt-2 text-zinc-300 italic font-serif">thephotoblog.india.1 / Muskan</p>
+                    <p className="mt-2 text-zinc-300 italic font-serif">thephotoblog.india.1 / Muskan Mundhra</p>
                     <p className="text-[8px] tracking-widest mt-0.5 font-sans">Campaign Director & Visual Lead</p>
                   </div>
                 </div>

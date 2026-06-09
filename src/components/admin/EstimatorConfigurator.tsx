@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getEstimatorConfig, saveEstimatorConfig, EstimatorSettings } from '../../lib/firebase';
 import { Save, RefreshCw, Sliders, DollarSign, Clock, HelpCircle, ShieldAlert } from 'lucide-react';
 import { usePriceCalculator } from '../../hooks/usePriceCalculator';
+import { AudioSynth } from '../ClientDashboard';
 
 export default function EstimatorConfigurator() {
   const [config, setConfig] = useState<EstimatorSettings | null>(null);
@@ -197,10 +198,13 @@ export default function EstimatorConfigurator() {
                   <input
                     type="range" min="0.4" max="1.5" step="0.05"
                     value={config.scaleMultipliers['boutique'] || 0.8}
-                    onChange={e => setConfig({
-                      ...config,
-                      scaleMultipliers: { ...config.scaleMultipliers, 'boutique': Number(e.target.value) }
-                    })}
+                    onChange={e => {
+                      AudioSynth.playTapeRoll();
+                      setConfig({
+                        ...config,
+                        scaleMultipliers: { ...config.scaleMultipliers, 'boutique': Number(e.target.value) }
+                      });
+                    }}
                     className="w-full accent-white"
                   />
                 </div>
@@ -213,10 +217,13 @@ export default function EstimatorConfigurator() {
                   <input
                     type="range" min="0.8" max="2.0" step="0.05"
                     value={config.scaleMultipliers['mid'] || 1.2}
-                    onChange={e => setConfig({
-                      ...config,
-                      scaleMultipliers: { ...config.scaleMultipliers, 'mid': Number(e.target.value) }
-                    })}
+                    onChange={e => {
+                      AudioSynth.playTapeRoll();
+                      setConfig({
+                        ...config,
+                        scaleMultipliers: { ...config.scaleMultipliers, 'mid': Number(e.target.value) }
+                      });
+                    }}
                     className="w-full accent-white"
                   />
                 </div>
@@ -229,10 +236,13 @@ export default function EstimatorConfigurator() {
                   <input
                     type="range" min="1.5" max="3.5" step="0.1"
                     value={config.scaleMultipliers['luxury'] || 2.0}
-                    onChange={e => setConfig({
-                      ...config,
-                      scaleMultipliers: { ...config.scaleMultipliers, 'luxury': Number(e.target.value) }
-                    })}
+                    onChange={e => {
+                      AudioSynth.playTapeRoll();
+                      setConfig({
+                        ...config,
+                        scaleMultipliers: { ...config.scaleMultipliers, 'luxury': Number(e.target.value) }
+                      });
+                    }}
                     className="w-full accent-white"
                   />
                 </div>

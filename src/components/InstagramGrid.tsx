@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { Instagram, Eye, Heart, MessageCircle, ExternalLink, Play, Film, Award } from 'lucide-react';
-import { INSTAGRAM_POSTS } from '../data';
-import { InstagramHandle, validateInstagramHandle } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Instagram, Eye, Heart, MessageCircle, ExternalLink, Play, Film, Award, RefreshCw } from 'lucide-react';
+import { InstagramHandle, validateInstagramHandle, InstagramPost } from '../types';
+import { getInstagramPosts } from '../lib/firebase';
 
 interface InstagramGridProps {
   handle?: InstagramHandle;
@@ -14,11 +14,38 @@ interface InstagramGridProps {
 
 export default function InstagramGrid({ handle = '@thephotoblog.india.1' }: InstagramGridProps) {
   validateInstagramHandle(handle);
-  const [activePost, setActivePost] = useState<typeof INSTAGRAM_POSTS[0] | null>(null);
+  const [posts, setPosts] = useState<InstagramPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activePost, setActivePost] = useState<InstagramPost | null>(null);
 
-  const handlePostClick = (post: typeof INSTAGRAM_POSTS[0]) => {
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getInstagramPosts();
+        // filter out hidden posts
+        const activeOnly = data.filter(post => !(post as any).hidden);
+        setPosts(activeOnly);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const handlePostClick = (post: InstagramPost) => {
     setActivePost(post);
   };
+
+  if (loading) {
+    return (
+      <div className="py-20 text-center text-zinc-500 font-mono text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+        <RefreshCw className="w-4 h-4 animate-spin text-white" />
+        Synchronizing Digital Feed...
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-8">
@@ -62,7 +89,7 @@ export default function InstagramGrid({ handle = '@thephotoblog.india.1' }: Inst
 
       {/* Grid of latest portfolio cases */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {INSTAGRAM_POSTS.map((post) => (
+        {posts.map((post) => (
           <div
             key={post.id}
             onClick={() => handlePostClick(post)}

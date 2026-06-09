@@ -97,7 +97,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
         <div className="flex items-center gap-3">
           <ArrowLeft className="w-4 h-4 text-[#8696a0] cursor-pointer" />
           <div className="flex flex-col">
-            <span className="font-sans font-semibold text-sm">Muskan</span>
+            <span className="font-sans font-semibold text-sm">Muskan Mundhra</span>
             <span className="text-[10px] text-[#8696a0] font-mono tracking-wider uppercase">Business Info</span>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
               <span className="bg-black/85 border border-white/10 px-2 py-1 text-[8px] font-mono uppercase tracking-widest text-white">Logo Sign-Off</span>
             </div>
           </div>
-          <h3 className="text-xl font-semibold text-white mt-4 font-serif">Muskan</h3>
+          <h3 className="text-xl font-semibold text-white mt-4 font-serif">Muskan Mundhra</h3>
           <span className="text-[10px] font-mono text-[#8696a0] tracking-widest mt-1">THE PHOTO BLOG.INDIA.1</span>
         </div>
 
@@ -295,7 +295,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
         <div className="pt-2 text-center">
           <Magnetic>
             <a
-              href={`https://wa.me/+91${config?.phone || "9145961226"}?text=Hi%20Muskan%2C%20we'd%20love%20to%20discuss%20a%20social%20media%20management%20and%20branding%20collaboration%20with%20The%20Photo%20Blog%252520India.1%252520hub.`}
+              href={`https://wa.me/+91${config?.phone || "9145961226"}?text=Hi%20Muskan%20Mundhra%2C%20we'd%20love%20to%20discuss%20a%20social%20media%20management%20and%20branding%20collaboration%20with%20The%20Photo%20Blog%252520India.1%252520hub.`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-full min-w-[280px] bg-[#00a884] hover:bg-[#00bfa5] text-black py-3 px-4 font-bold text-xs tracking-widest uppercase transition-all rounded-none items-center justify-center gap-2 font-mono"

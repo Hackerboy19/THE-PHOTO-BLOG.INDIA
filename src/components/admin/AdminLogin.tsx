@@ -203,7 +203,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         )}
 
         <div className="mt-8 text-center text-[10px] font-mono text-zinc-600">
-          THE PHOTO BLOG.INDIA.1 Security Hub • Jaipur HQ
+          THE PHOTO BLOG.INDIA Security Hub • Jaipur HQ
         </div>
       </motion.div>
     </div>

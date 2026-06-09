@@ -28,6 +28,7 @@ import {
   VolumeX,
   Send,
   Linkedin,
+  Facebook,
   ChevronLeft,
   ChevronRight,
   ArrowUp,
@@ -51,6 +52,8 @@ import { Magnetic, SplitTextReveal } from './components/EditorialAnimations';
 import EditorialDivider from './components/EditorialDivider';
 import { useShutterSound } from './hooks/useShutterSound';
 import ZoomableLightboxImage from './components/ZoomableLightboxImage';
+import CinematicPreloader from './components/CinematicPreloader';
+import BrandLogo from './components/BrandLogo';
 
 // Admin System Imports
 import { 
@@ -126,6 +129,7 @@ const staggerContainer = {
 };
 
 export default function App() {
+  const [preloaderActive, setPreloaderActive] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
@@ -195,6 +199,27 @@ export default function App() {
         setTestimonialsData(testimonials);
         setWhatsAppConfig(whatsapp);
         setSectionVisibility(visibility);
+
+        // Pre-fetch primary backgrounds to ensure flawless visual ready
+        const heroUrl = hero?.backgroundImage || HERO_BACKGROUND;
+        const aboutUrl = about?.aboutImage || ABOUT_IMAGE;
+
+        const prefetchImage = (url: string): Promise<void> => {
+          return new Promise((resolve) => {
+            if (!url) return resolve();
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        };
+
+        await Promise.all([
+          prefetchImage(heroUrl),
+          prefetchImage(aboutUrl)
+        ]).catch((err) => {
+          console.warn("Image prefetch mismatch details:", err);
+        });
 
         // Auto-open portfolio item if shared via "?project=id" URL format
         const params = new URLSearchParams(window.location.search);
@@ -291,7 +316,7 @@ export default function App() {
   // Dynamic SEO Open Graph tags and Page Title sync
   useEffect(() => {
     if (selectedPortfolioItem) {
-      document.title = `${selectedPortfolioItem.title} ✦ THE PHOTO BLOG.INDIA.1`;
+      document.title = `${selectedPortfolioItem.title} ✦ THE PHOTO BLOG.INDIA`;
       
       const updateMetaTag = (property: string, content: string) => {
         let element = document.querySelector(`meta[property="${property}"]`);
@@ -313,17 +338,17 @@ export default function App() {
         element.setAttribute('content', content);
       };
 
-      updateMetaTag('og:title', `${selectedPortfolioItem.title} ✦ THE PHOTO BLOG.INDIA.1`);
+      updateMetaTag('og:title', `${selectedPortfolioItem.title} ✦ THE PHOTO BLOG.INDIA`);
       updateMetaTag('og:description', `Co-directed digital film partnership for ${selectedPortfolioItem.client}. Category: ${selectedPortfolioItem.category}. Impact outcome: ${selectedPortfolioItem.impact}.`);
       updateMetaTag('og:image', selectedPortfolioItem.imageUrl);
       updateNameTag('description', `Co-directed digital film partnership for ${selectedPortfolioItem.client}. Category: ${selectedPortfolioItem.category}. Impact outcome: ${selectedPortfolioItem.impact}.`);
     } else {
-      document.title = 'THE PHOTO BLOG.INDIA.1 ✦ Elite Photography & Cinematic Agency Jaipur';
+      document.title = 'THE PHOTO BLOG.INDIA ✦ Elite Photography & Cinematic Agency Jaipur';
       
       const updateMetaTag = (property: string, content: string) => {
         const element = document.querySelector(`meta[property="${property}"]`);
         if (element) {
-          if (property === 'og:title') element.setAttribute('content', 'THE PHOTO BLOG.INDIA.1 ✦ Elite Photography & Cinematic Agency');
+          if (property === 'og:title') element.setAttribute('content', 'THE PHOTO BLOG.INDIA ✦ Elite Photography & Cinematic Agency');
           if (property === 'og:description') element.setAttribute('content', 'Elite corporate photography, high-retention video production, and social-first editorial campaigns co-directed in Jaipur.');
           if (property === 'og:image') element.setAttribute('content', 'https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&q=80&w=1200');
         }
@@ -336,7 +361,7 @@ export default function App() {
         }
       };
 
-      updateMetaTag('og:title', 'THE PHOTO BLOG.INDIA.1 ✦ Elite Photography & Cinematic Agency');
+      updateMetaTag('og:title', 'THE PHOTO BLOG.INDIA ✦ Elite Photography & Cinematic Agency');
       updateMetaTag('og:description', 'Elite corporate photography, high-retention video production, and social-first editorial campaigns co-directed in Jaipur.');
       updateMetaTag('og:image', 'https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&q=80&w=1200');
       updateNameTag('description', 'Elite corporate photography, high-retention video production, and editorial campaigns co-directed in Jaipur, India. Specializing in cinematic brand takeovers.');
@@ -360,7 +385,7 @@ export default function App() {
     if (navigator.share && navigator.canShare && navigator.canShare({ url: shareUrl })) {
       try {
         await navigator.share({
-          title: `${selectedPortfolioItem.title} | THE PHOTO BLOG.INDIA.1`,
+          title: `${selectedPortfolioItem.title} | THE PHOTO BLOG.INDIA`,
           text: `Check out this digital collaboration: "${selectedPortfolioItem.title}" with ${selectedPortfolioItem.client}.`,
           url: shareUrl
         });
@@ -482,7 +507,7 @@ export default function App() {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <button
               onClick={navigateToHome}
-              className="text-xs font-mono tracking-widest text-[#8696a0] hover:text-[#00a884] transition-colors uppercase cursor-pointer"
+              className="text-xs font-mono tracking-widest text-[#8696a0] hover:text-[#FFDA03] transition-colors uppercase cursor-pointer"
             >
               ← Back to TPB India Site
             </button>
@@ -548,12 +573,17 @@ export default function App() {
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1.2, ease: 'easeOut' }}
-      className="relative min-h-screen bg-[#080808] text-[#F5F5F5] overflow-x-hidden"
-    >
+    <>
+      {preloaderActive && (
+        <CinematicPreloader onComplete={() => setPreloaderActive(false)} />
+      )}
+
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.2, ease: 'easeOut' }}
+        className="relative min-h-screen bg-[#080808] text-[#F5F5F5] overflow-x-hidden"
+      >
       
       {/* BACKGROUND GRID DECORATION (Subtle, elegant) */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1b1b1b_1px,transparent_1px),linear-gradient(to_bottom,#1b1b1b_1px,transparent_1px)] bg-[size:5rem_5rem] pointer-events-none opacity-40 z-0" />
@@ -575,25 +605,25 @@ export default function App() {
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
           
-          {/* Logo with clean elegant cinematic serif font */}
+          {/* Custom brand vector logo */}
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="text-base font-serif italic tracking-tight text-white uppercase hover:text-zinc-400 transition-colors font-semibold"
+            className="text-left hover:opacity-90 transition-opacity focus:outline-none py-1"
           >
-            THE PHOTO BLOG.INDIA.1
+            <BrandLogo theme="minimal" className="scale-[0.8] sm:scale-100 origin-left" />
           </button>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6 text-[10px] font-mono text-zinc-400 uppercase">
+          {/* Desktop Navigation - Exclusively 3 Pages/Sections */}
+          <nav className="hidden lg:flex items-center gap-10 text-[11px] font-mono text-zinc-400 uppercase tracking-widest">
             <motion.button
               initial="rest"
               whileHover="hover"
               animate="rest"
               variants={hoverTrackingVariants}
               onClick={() => scrollToSection('about')}
-              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+              className="hover:text-[#FFEEB7] hover:border-[#FFDA03] transition-all duration-300 cursor-pointer border-b border-transparent text-left pb-1"
             >
-              About
+              About Us
             </motion.button>
             <motion.button
               initial="rest"
@@ -601,49 +631,19 @@ export default function App() {
               animate="rest"
               variants={hoverTrackingVariants}
               onClick={() => scrollToSection('services')}
-              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+              className="hover:text-[#FFEEB7] hover:border-[#FFDA03] transition-all duration-300 cursor-pointer border-b border-transparent text-left pb-1"
             >
-              Services
+              Services Spec
             </motion.button>
             <motion.button
               initial="rest"
               whileHover="hover"
               animate="rest"
               variants={hoverTrackingVariants}
-              onClick={() => scrollToSection('estimator')}
-              className="hover:text-white transition-colors cursor-pointer border-b text-left"
+              onClick={() => scrollToSection('contact')}
+              className="hover:text-[#FFEEB7] hover:border-[#FFDA03] transition-all duration-300 cursor-pointer border-b border-transparent text-left pb-1"
             >
-              Estimator
-            </motion.button>
-            <motion.button
-              initial="rest"
-              whileHover="hover"
-              animate="rest"
-              variants={hoverTrackingVariants}
-              onClick={() => scrollToSection('why-us')}
-              className="hover:text-white transition-colors cursor-pointer border-b text-left"
-            >
-              Why Us
-            </motion.button>
-            <motion.button
-              initial="rest"
-              whileHover="hover"
-              animate="rest"
-              variants={hoverTrackingVariants}
-              onClick={() => scrollToSection('portfolio')}
-              className="hover:text-white transition-colors cursor-pointer border-b text-left"
-            >
-              Portfolio
-            </motion.button>
-            <motion.button
-              initial="rest"
-              whileHover="hover"
-              animate="rest"
-              variants={hoverTrackingVariants}
-              onClick={() => scrollToSection('instagram')}
-              className="hover:text-white transition-colors cursor-pointer border-b text-left"
-            >
-              Feed
+              Contact Us
             </motion.button>
           </nav>
 
@@ -652,10 +652,10 @@ export default function App() {
             <Magnetic>
               <motion.button
                 initial={{ letterSpacing: "0.15em", borderColor: "rgba(255,255,255,0.2)" }}
-                whileHover={{ letterSpacing: "0.22em", borderColor: "rgba(255,255,255,1)" }}
+                whileHover={{ letterSpacing: "0.22em", borderColor: "#FFDA03", color: "#FFDA03" }}
                 transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => scrollToSection('contact')}
-                className="bg-transparent text-white text-[10px] font-mono uppercase px-6 py-3 border transition-all cursor-pointer"
+                className="bg-transparent text-white text-[10px] font-mono uppercase px-6 py-3 border border-white/20 transition-all cursor-pointer"
               >
                 Inquire Now
               </motion.button>
@@ -665,7 +665,7 @@ export default function App() {
           {/* Mobile Menu Icon */}
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden text-zinc-400 hover:text-white p-2"
+            className="lg:hidden text-zinc-400 hover:text-[#FFDA03] p-2"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -673,29 +673,41 @@ export default function App() {
         </div>
       </motion.header>
 
-      {/* MOBILE NAV OVERLAY */}
+      {/* MOBILE NAV OVERLAY - Exclusively 3 Pages/Sections */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 bg-[#080808] z-30 pt-24 px-8 pb-12 flex flex-col justify-between border-b border-white/10"
+            className="fixed inset-0 bg-black z-30 pt-28 px-8 pb-12 flex flex-col justify-between border-b border-white/10"
           >
-            <nav className="flex flex-col gap-6 text-sm tracking-[0.2em] text-zinc-400 uppercase font-mono">
-              <button onClick={() => scrollToSection('about')} className="text-left py-2 border-b border-white/10 hover:text-white transition-colors">About</button>
-              <button onClick={() => scrollToSection('services')} className="text-left py-2 border-b border-white/10 hover:text-white transition-colors">Services</button>
-              <button onClick={() => scrollToSection('estimator')} className="text-left py-2 border-b border-white/10 hover:text-white transition-colors">Campaign Estimator</button>
-              <button onClick={() => scrollToSection('why-us')} className="text-left py-2 border-b border-white/10 hover:text-white transition-colors">Why Choose Us</button>
-              <button onClick={() => scrollToSection('portfolio')} className="text-left py-2 border-b border-white/10 hover:text-white transition-colors">Our Portfolio</button>
-              <button onClick={() => scrollToSection('instagram')} className="text-left py-2 border-b border-white/10 hover:text-white transition-colors">Instagram Portfolio</button>
+            <nav className="flex flex-col gap-8 text-lg tracking-[0.25em] text-zinc-400 uppercase font-mono">
+              <button 
+                onClick={() => { scrollToSection('about'); setMobileMenuOpen(false); }} 
+                className="text-left py-3 border-b border-white/5 hover:text-[#FFDA03] transition-colors"
+              >
+                About Us
+              </button>
+              <button 
+                onClick={() => { scrollToSection('services'); setMobileMenuOpen(false); }} 
+                className="text-left py-3 border-b border-white/5 hover:text-[#FFDA03] transition-colors"
+              >
+                Services
+              </button>
+              <button 
+                onClick={() => { scrollToSection('contact'); setMobileMenuOpen(false); }} 
+                className="text-left py-3 border-b border-white/5 hover:text-[#FFDA03] transition-colors"
+              >
+                Contact Us
+              </button>
             </nav>
 
             <div className="space-y-6">
-              <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 uppercase">THE PHOTO BLOG.INDIA.1 • CINEMATIC STORYTELLERS</p>
+              <p className="text-[9px] font-mono tracking-[0.2em] text-zinc-500 uppercase">THE PHOTO BLOG.INDIA • MUSKAN MUNDHRA</p>
               <button
-                onClick={() => scrollToSection('contact')}
-                className="w-full bg-transparent border border-white hover:bg-white hover:text-black py-4 font-mono font-bold uppercase tracking-widest text-xs text-white"
+                onClick={() => { scrollToSection('contact'); setMobileMenuOpen(false); }}
+                className="w-full bg-[#FFEEB7] hover:bg-[#FFDA03] border border-[#FFEEB7] hover:border-[#FFDA03] text-black py-4 font-mono font-bold uppercase tracking-widest text-xs transition-colors cursor-pointer"
               >
                 Direct Contact Us
               </button>
@@ -715,7 +727,7 @@ export default function App() {
             animate={{ scale: 1.02, opacity: 1 }}
             transition={{ duration: 2.2, ease: [0.16, 1, 0.3, 1] }}
             src={heroConfig?.bgUrl || HERO_BACKGROUND}
-            alt="THE PHOTO BLOG.INDIA.1 Cinematic Setting"
+            alt="THE PHOTO BLOG.INDIA Cinematic Setting"
             className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.35] lg:brightness-60"
             style={{ transform: `translateY(${scrollY * 0.35}px)`, willChange: 'transform' }}
             referrerPolicy="no-referrer"
@@ -749,7 +761,7 @@ export default function App() {
             <span>8K SENSORS</span>
           </div>
           <div className="h-px bg-zinc-900" />
-          <p className="leading-normal">THE PHOTO BLOG.INDIA.1 / NEW-AGE CREATIVE HQ [JAIPUR, IN]</p>
+          <p className="leading-normal">THE PHOTO BLOG.INDIA / NEW-AGE CREATIVE HQ [JAIPUR, IN]</p>
         </div>
 
         {/* HERO CONTENT */}
@@ -780,7 +792,7 @@ export default function App() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="mt-6 text-sm sm:text-base text-zinc-300 font-sans tracking-wide max-w-xl leading-relaxed lg:mx-0 mx-auto"
           >
-            {heroConfig?.subHeadline || "THE PHOTO BLOG.INDIA.1 is a high-end digital marketing and cinematic media house. We direct premium film campaigns, brand collaborations, and high-fidelity visuals that compel eyes and capture market trust."}
+            {heroConfig?.subHeadline || "THE PHOTO BLOG.INDIA is a high-end digital marketing and cinematic media house. We direct premium film campaigns, brand collaborations, and high-fidelity visuals that compel eyes and capture market trust."}
           </motion.p>
 
           {/* Action Callouts */}
@@ -869,18 +881,12 @@ export default function App() {
                 </picture>
               </div>
 
-              {/* Simulated Live Metadata strip below */}
-              <div className="absolute bottom-4 left-4 right-4 bg-black/90 px-3 py-2 border border-white/10 rounded-none flex items-center justify-between text-[9px] font-mono tracking-wider text-zinc-400">
-                <span className="flex items-center gap-1"><Camera className="w-3.5" /> 35mm Prime</span>
-                <span>{aboutSettings?.shutter || "1/250"}</span>
-                <span>ISO {aboutSettings?.iso || "100"}</span>
-                <span>{aboutSettings?.aperture || "f/1.4"}</span>
-              </div>
+
             </div>
 
             {/* About Text Content Column */}
             <div className="lg:col-span-7 space-y-6">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-[#00a884] uppercase">THE AGENCY</span>
+              <span className="text-[10px] font-mono tracking-[0.2em] text-[#FFEEB7] uppercase font-bold">THE AGENCY</span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white leading-tight">
                 We don’t just market. <span className="italic font-normal text-zinc-350">We build brands.</span> <span className="block mt-2 text-xl sm:text-2xl font-sans font-semibold tracking-wider text-zinc-400">Jaipur rooted. Growing globally.</span>
               </h2>
@@ -898,12 +904,12 @@ export default function App() {
               {/* Founder Profile Block */}
               <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row gap-5 items-start">
                 <div className="w-14 h-14 shrink-0 border border-white/10 bg-zinc-900 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-[#00a884]/10" />
+                  <div className="absolute inset-0 bg-[#FFEEB7]/10" />
                   <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200" alt="Muskan Mundhra" className="w-full h-full object-cover filter grayscale" />
                 </div>
                 <div>
                   <h4 className="font-serif text-white text-base font-semibold">Muskan Mundhra</h4>
-                  <p className="text-[10px] font-mono text-[#00a884] uppercase tracking-wider">Founder & Creative Director</p>
+                  <p className="text-[10px] font-mono text-[#FFEEB7] uppercase tracking-wider font-bold">Founder & Creative Director</p>
                   <p className="text-zinc-400 text-xs font-sans leading-relaxed mt-2 font-light">
                     Our founder, Muskan Mundhra, completed her M.Sc in Entrepreneurship & Innovation Management from the University of Liverpool before taking the plunge to pursue her dream of shaping the digital world through strategy-driven and impactful branding.
                   </p>
@@ -1023,7 +1029,7 @@ export default function App() {
               className="mt-20 pt-16 border-t border-white/10 space-y-8"
             >
               <div>
-                <span className="text-[10px] font-mono tracking-[0.2em] text-[#00a884] uppercase block">Strategic Focus</span>
+                <span className="text-[10px] font-mono tracking-[0.2em] text-[#FFEEB7] uppercase block font-bold">Strategic Focus</span>
                 <h3 className="text-2xl sm:text-3xl font-serif text-white mt-1">Niche Industries We Serve</h3>
                 <p className="text-sm text-zinc-400 max-w-2xl mt-2 font-sans">
                   We specialize in tailoring high-end branding, content strategy, and meta campaigns for specific industry sectors. By understanding the intricate nuances of these spaces, we generate authentic digital momentum.
@@ -1038,11 +1044,11 @@ export default function App() {
                   { name: "MSMEs", desc: "Strategy driven growth and business traction" },
                   { name: "Community", desc: "Fostering tribal loyalty & authentic engagement" }
                 ].map((ind, iIdx) => (
-                  <div key={iIdx} className="bg-[#0a0a0a] border border-white/5 hover:border-white/20 p-6 transition-all group relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-[2px] h-0 bg-[#00a884] group-hover:h-full transition-all duration-300" />
-                    <span className="text-xs font-mono text-zinc-500 block mb-2">0{iIdx + 1} //</span>
-                    <h4 className="text-lg font-serif text-white group-hover:text-[#00a884] transition-colors">{ind.name}</h4>
-                    <p className="text-[11px] text-zinc-550 mt-2 font-sans leading-relaxed">{ind.desc}</p>
+                  <div key={iIdx} className="bg-[#0a0a0a] border border-white/5 hover:border-[#FFEEB7]/20 p-6 transition-all group relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-[2px] h-0 bg-[#FFDA03] group-hover:h-full transition-all duration-300" />
+                    <span className="text-xs font-mono text-[#FFDA03] block mb-2">0{iIdx + 1} //</span>
+                    <h4 className="text-lg font-serif text-white group-hover:text-[#FFEEB7] transition-colors">{ind.name}</h4>
+                    <p className="text-[11px] text-zinc-500 mt-2 font-sans leading-relaxed">{ind.desc}</p>
                   </div>
                 ))}
               </div>
@@ -1054,429 +1060,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* 4. DYNAMIC INTERACTIVE ESTIMATOR & CAMPAIGN BUILDER (Requested Action flow) */}
-      <AnimatePresence>
-        {(!sectionVisibility || sectionVisibility.estimator) && (
-          <motion.div
-            key="estimator-stage"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <EditorialDivider label="03 // DIGITAL ROADMAP CONFIGURATOR" />
-            <motion.section 
-            id="estimator" 
-            className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-          <div className="max-w-4xl mx-auto space-y-12 relative z-10">
-            <div className="text-center space-y-4 max-w-xl mx-auto">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-white border border-white/10 px-3 py-1 rounded-none uppercase bg-zinc-900/60">Configurator Toolkit</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Campaign Brief & Budget Builder</h2>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                We trust in perfect clarity. Select your creative deliverables, production scale, and schedule density below to outline an immediate investment roadmap tailored for your brand.
-              </p>
-            </div>
-
-            <CampaignEstimator onIntegrate={handleEstimatorIntegration} />
-          </div>
-        </motion.section>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 5. WHY CHOOSE US SECTION */}
-      <AnimatePresence>
-        {(!sectionVisibility || sectionVisibility.whyUs) && (
-          <motion.div
-            key="why-us-stage"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <EditorialDivider label="04 // CREATIVE VALUE PROPOSITION" />
-            <motion.section 
-            id="why-us" 
-            className="py-24 md:py-32 bg-[#060606] px-6 md:px-12 relative"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-          >
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-            
-            {/* Why Choose Us Sticky Left Column */}
-            <motion.div variants={fadeInUpVariants} className="lg:col-span-4 space-y-4">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase block">Aesthetic Standards</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Why Select Our Vision</h2>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                We stand apart in India's advertising landscape because we respect physical texture, raw lighting, and timeless storytelling structures. No plastic green screens. Pure authentic visual craftsmanship.
-              </p>
-              
-              {/* Instagram promotion link info */}
-              <div className="p-5 bg-[#0a0a0a] border border-white/10 rounded-none mt-6 space-y-2">
-                <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Digital Native Verification</span>
-                <div className="flex items-center gap-2">
-                  <Instagram className="w-4 h-4 text-white" />
-                  <span className="text-xs font-semibold text-white">@thephotoblog.india.1</span>
-                </div>
-                <p className="text-[11px] text-zinc-505 leading-normal font-sans">Our organic cinematic portfolio serves over millions of visual impressions organically.</p>
-              </div>
-            </motion.div>
-
-            {/* Staggered features grid */}
-            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {(whyChooseUsData.length > 0 ? whyChooseUsData : WHY_CHOOSE_US_DATA)
-                .filter(item => !(item as any).hidden)
-                .map((item) => {
-                  // Custom map icons to visual elements
-                  const getIcon = (name: string) => {
-                    switch(name) {
-                      case 'Film': return <Film className="w-5 h-5 text-white" />;
-                      case 'Sparkles': return <Sparkles className="w-5 h-5 text-white" />;
-                      case 'Clock': return <Clock className="w-5 h-5 text-white" />;
-                      case 'ShieldCheck': return <ShieldCheck className="w-5 h-5 text-white" />;
-                      case 'Zap': return <Zap className="w-5 h-5 text-white" />;
-                      case 'Camera': return <Camera className="w-5 h-5 text-white" />;
-                      case 'Award': return <Award className="w-5 h-5 text-white" />;
-                      case 'Heart': return <Heart className="w-5 h-5 text-white" />;
-                      case 'Shield': return <Shield className="w-5 h-5 text-white" />;
-                      default: return <Sparkles className="w-5 h-5 text-white" />;
-                    }
-                  };
-
-                  return (
-                    <motion.div
-                      key={item.id}
-                      variants={fadeInUpVariants}
-                      className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-none transition-all hover:border-white/30"
-                    >
-                      <div className="w-10 h-10 rounded-none bg-zinc-900 flex items-center justify-center border border-white/10">
-                        {getIcon(item.iconName)}
-                      </div>
-                      <h3 className="text-lg font-serif text-white mt-4">{item.title}</h3>
-                      <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{item.description}</p>
-                    </motion.div>
-                  );
-                })}
-            </div>
-
-          </div>
-        </motion.section>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 6. CLIENT TESTIMONIALS SECTION */}
-      <AnimatePresence>
-        {(!sectionVisibility || sectionVisibility.testimonials) && (
-          <motion.div
-            key="testimonials-stage"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <EditorialDivider label="05 // EXECUTIVE ENDORSEMENTS" />
-            <motion.section 
-            className="py-24 md:py-32 bg-black px-6 md:px-12 relative overflow-hidden"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {/* Subtle camera frame bounds */}
-          <div className="absolute top-4 left-4 text-[9px] font-mono text-zinc-700">[REC AUDIO MONO ACTIVE]</div>
-          <div className="absolute bottom-4 right-4 text-[9px] font-mono text-zinc-700">[CLIENT TESTIMONY PREVIEW]</div>
-
-          <div className="max-w-4xl mx-auto space-y-12 text-center relative z-10">
-            <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Director Endorsements</span>
-
-            {/* Slider content */}
-            <div className="relative min-h-[220px] flex items-center justify-center">
-              <AnimatePresence mode="wait">
-                {((testimonialsData && testimonialsData.length > 0) ? testimonialsData : TESTIMONIALS_DATA)
-                  .filter(t => !t.hidden)
-                  .map((t, idx, arr) => (
-                    idx === (activeTestimonial % (arr.length || 1)) && (
-                      <motion.div
-                        key={t.id}
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.98 }}
-                        transition={{ duration: 0.4 }}
-                        className="space-y-6"
-                      >
-                        <p className="text-lg sm:text-2xl md:text-3xl font-serif text-white italic leading-relaxed max-w-3xl mx-auto">
-                          “{t.quote}”
-                        </p>
-                        <div className="space-y-1">
-                          <h4 className="text-sm font-sans font-medium text-zinc-100">{t.author}</h4>
-                          <p className="text-[10px] font-mono text-zinc-505 uppercase tracking-[0.15em]">
-                            {t.role} — <span className="text-white font-serif italic">{t.brand}</span>
-                          </p>
-                        </div>
-                      </motion.div>
-                    )
-                  ))}
-              </AnimatePresence>
-            </div>
-
-            {/* Indicator Pills */}
-            <div className="flex items-center justify-center gap-3 pt-4">
-              {((testimonialsData && testimonialsData.length > 0) ? testimonialsData : TESTIMONIALS_DATA)
-                .filter(t => !t.hidden)
-                .map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveTestimonial(idx)}
-                    className={`h-1 transition-all cursor-pointer rounded-none ${
-                      (activeTestimonial % (((testimonialsData && testimonialsData.length > 0) ? testimonialsData : TESTIMONIALS_DATA).filter(t => !t.hidden).length || 1)) === idx ? 'w-8 bg-white' : 'w-2 bg-zinc-800 hover:bg-zinc-700'
-                    }`}
-                  />
-                ))}
-            </div>
-
-          </div>
-        </motion.section>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 7. LATEST PORTFOLIO COLLABS GRID */}
-      <AnimatePresence>
-        {(!sectionVisibility || sectionVisibility.portfolio) && (
-          <motion.div
-            key="portfolio-stage"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <EditorialDivider label="06 // CINEMATIC PORTFOLIO" />
-            <motion.section 
-            id="portfolio" 
-            className="py-24 md:py-32 bg-[#080808] px-6 md:px-12"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-          variants={staggerContainer}
-        >
-          <div className="max-w-7xl mx-auto space-y-16">
-            
-            {/* Header */}
-            <motion.div variants={fadeInUpVariants} className="text-center space-y-4 max-w-xl mx-auto">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Cinematic Proof</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Brand Partnerships & Campaigns</h2>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                We collaborate with luxury labels to co-direct high-retention digital visual features. Explore our latest custom projects across India and international outlets.
-              </p>
-            </motion.div>
-  
-            {/* Elegant Editorial Filter Tabs */}
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-2 pb-6 border-b border-white/5 max-w-4xl mx-auto">
-              {[
-                { id: 'all', label: 'ALL CAMPAIGNS' },
-                { id: 'Brand Collaboration', label: 'COLLAB SYNERGY' },
-                { id: 'Editorial Photography', label: 'EDITORIAL STILLS' },
-                { id: 'Cinematic Videography', label: 'CINEMATIC VIDEO' },
-                { id: 'Brand Campaign', label: 'BRAND CONCEPTS' }
-              ].map((cat) => {
-                const isActive = selectedCategory === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => {
-                      if (selectedCategory === cat.id) return;
-                      setIsCategoryChanging(true);
-                      setSelectedCategory(cat.id);
-                      setTimeout(() => {
-                        setIsCategoryChanging(false);
-                      }, 400);
-                    }}
-                    className={`relative text-[10px] uppercase font-mono tracking-[0.18em] py-2 px-3 transition-all cursor-pointer ${
-                      isActive 
-                        ? 'text-white font-bold' 
-                        : 'text-zinc-500 hover:text-zinc-300'
-                    }`}
-                  >
-                    {cat.label}
-                    {isActive && (
-                      <motion.div 
-                        layoutId="activeCategoryBorder"
-                        className="absolute bottom-0 left-0 w-full h-[1px] bg-white"
-                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Portfolio Grid wrapper */}
-            <div className="relative min-h-[400px]">
-              {isCategoryChanging ? (
-                /* High-fidelity Skeleton Loaders with Shimmer */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-                  {[1, 2, 3, 4].map((n) => (
-                    <div key={n} className="space-y-4 animate-pulse">
-                      <div className="aspect-[16/10] bg-zinc-950/60 border border-white/5 relative overflow-hidden">
-                        {/* Shimmer overlay gradient moving left-to-right */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.8s_infinite]" />
-                        <div className="absolute top-4 left-4 w-24 h-4 bg-zinc-900 border border-white/5" />
-                        <div className="absolute bottom-4 right-4 w-16 h-4 bg-zinc-900" />
-                      </div>
-                      <div className="flex justify-between items-center px-2">
-                        <div className="space-y-2">
-                          <div className="w-24 h-3 bg-zinc-900" />
-                          <div className="w-48 h-4 bg-zinc-900" />
-                        </div>
-                        <div className="w-10 h-4 bg-zinc-900" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                /* Refined Interactive Portfolio Grid */
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-8"
-                >
-                  {(portfolioItems.length > 0 ? portfolioItems : PORTFOLIO_DATA)
-                    .filter(item => !(item as any).hidden)
-                    .filter(item => selectedCategory === 'all' || item.category === selectedCategory)
-                    .map((item) => (
-                      <motion.div
-                        key={item.id}
-                        variants={fadeInUpVariants}
-                        className="group relative bg-[#0a0a0a] border border-white/10 rounded-none overflow-hidden hover:border-white/30 transition-all duration-300"
-                      >
-                        {/* Image layout container */}
-                        <div 
-                          className="aspect-[16/10] overflow-hidden relative cursor-pointer group/img"
-                          onClick={() => setSelectedPortfolioItem(item)}
-                          onMouseEnter={() => setIsHoveredInspect(true)}
-                          onMouseLeave={() => setIsHoveredInspect(false)}
-                        >
-                          <div className="relative w-full h-full overflow-hidden">
-                            {/* Standard Main Image Layer */}
-                            <img
-                              src={getOptimizedImageUrl(item.imageUrl, 1080, 'auto')}
-                              alt={item.title}
-                              className="w-full h-full object-cover grayscale brightness-90 group-hover/img:grayscale-0 group-hover/img:scale-[1.02] transition-all duration-500 relative z-10"
-                              referrerPolicy="no-referrer"
-                              loading="lazy"
-                            />
-
-                            {/* Red Aberration Layer (Visible on hover) */}
-                            <img
-                              src={getOptimizedImageUrl(item.imageUrl, 1080, 'auto')}
-                              alt=""
-                              className="absolute inset-0 w-full h-full object-cover mix-blend-screen scale-[1.03] translate-x-[2.5px] opacity-0 group-hover/img:opacity-75 transition-all duration-300 filter hue-rotate-[120deg] saturate-200 z-20 pointer-events-none"
-                              referrerPolicy="no-referrer"
-                            />
-
-                            {/* Cyan Aberration Layer (Visible on hover) */}
-                            <img
-                              src={getOptimizedImageUrl(item.imageUrl, 1080, 'auto')}
-                              alt=""
-                              className="absolute inset-0 w-full h-full object-cover mix-blend-screen scale-[1.03] -translate-x-[2.5px] opacity-0 group-hover/img:opacity-75 transition-all duration-300 filter hue-rotate-[240deg] saturate-200 z-20 pointer-events-none"
-                              referrerPolicy="no-referrer"
-                            />
-
-                            {/* Brutalist analog scanline overlay (Visible on hover) */}
-                            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.35)_50%)] bg-[size:100%_4px] opacity-0 group-hover/img:opacity-100 transition-all duration-300 pointer-events-none z-30" />
-                          </div>
-                          
-                          {/* Luxury editorial hover cue overlay */}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                            <div className="border border-white/20 bg-black/70 px-4 py-2 text-[10px] uppercase font-mono tracking-[0.2em] text-white">
-                              Inspect Frame ✦
-                            </div>
-                          </div>
-                          
-                          {/* Category Pill floating top */}
-                          <div className="absolute top-4 left-4 bg-black/90 px-3 py-1 rounded-none border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 uppercase z-10">
-                            {item.category}
-                          </div>
-        
-                          {/* Impact text indicator floating bottom right */}
-                          <div className="absolute bottom-4 right-4 bg-white text-black px-2.5 py-1 rounded-none font-mono font-medium text-[9px] tracking-wider uppercase z-10">
-                            {item.impact}
-                          </div>
-                        </div>
-        
-                        <div className="p-6 flex items-center justify-between">
-                          <div className="space-y-1">
-                            <span className="text-[9px] font-mono text-zinc-505 uppercase tracking-widest">CLIENT — {item.client}</span>
-                            <h3 className="text-lg font-serif text-white font-medium">{item.title}</h3>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-xs font-mono text-zinc-500">{item.year}</span>
-                          </div>
-                        </div>
-        
-                      </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </div>
-  
-          </div>
-        </motion.section>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 8. INSTAGRAM showcase SECTION (Required explicitly in request) */}
-      <AnimatePresence>
-        {(!sectionVisibility || sectionVisibility.feed) && (
-          <motion.div
-            key="instagram-stage"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <EditorialDivider label="07 // REALTIME DIGITAL SYNDICATION" />
-            <motion.section 
-            id="instagram" 
-            className="py-24 bg-black px-6 md:px-12 relative"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-          <div className="max-w-7xl mx-auto space-y-12">
-            
-            <div className="text-center space-y-4 max-w-xl mx-auto">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Digital Feed</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Cinematic Instagram Portfolio</h2>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                Find our latest daily loops, fine-cut vertical stories, and real-time behind-the-scenes visual experiments live on our digital handle.
-              </p>
-            </div>
-  
-            <InstagramGrid />
-          </div>
-        </motion.section>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 9. CONTACT CTA SECTION */}
+      {/* 4. CONTACT CTA SECTION - Exclusively Section 3 */}
       <AnimatePresence>
         {(!sectionVisibility || sectionVisibility.contact) && (
           <motion.div
@@ -1487,10 +1071,10 @@ export default function App() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <EditorialDivider label="08 // CLIENT DIRECT OFFICE" />
+            <EditorialDivider label="03 // CLIENT DIRECT OFFICE" />
             <motion.section 
             id="contact" 
-            className="py-24 md:py-32 bg-[#080808] px-6 md:px-12 relative"
+            className="py-24 md:py-32 bg-[#000000] px-6 md:px-12 relative"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -1646,7 +1230,7 @@ export default function App() {
                   </button>
 
                   <p className="text-[10px] text-zinc-550 text-center leading-normal">
-                    By submitting, you align with the photographic and cinematography standards of THE PHOTO BLOG.INDIA.1. We treat all creative proposals as strictly confidential.
+                    By submitting, you align with the photographic and cinematography standards of THE PHOTO BLOG.INDIA. We treat all creative proposals as strictly confidential.
                   </p>
                 </motion.form>
               ) : (
@@ -1659,20 +1243,20 @@ export default function App() {
                   {/* Premium Cinematic Scanning / Transmission Visual Animation */}
                   <div className="relative w-36 h-36 mx-auto flex items-center justify-center">
                     {/* Concentric radar waves */}
-                    <div className="absolute inset-0 rounded-full border border-[#00a884]/20 animate-ping-slow pointer-events-none" />
-                    <div className="absolute inset-4 rounded-full border border-[#00a884]/10 animate-ping-slow pointer-events-none" style={{ animationDelay: '0.8s' }} />
+                    <div className="absolute inset-0 rounded-full border border-[#FFEEB7]/20 animate-ping-slow pointer-events-none" />
+                    <div className="absolute inset-4 rounded-full border border-[#FFEEB7]/10 animate-ping-slow pointer-events-none" style={{ animationDelay: '0.8s' }} />
                     <div className="absolute inset-8 rounded-full border border-white/5 animate-ping-slow pointer-events-none" style={{ animationDelay: '1.6s' }} />
 
                     {/* Laser Scanner Square Grid Container */}
-                    <div className="relative w-24 h-24 bg-black border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl shadow-[#00a884]/15">
+                    <div className="relative w-24 h-24 bg-black border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl shadow-[#FFEEB7]/15">
                       {/* Grid background scan lines */}
                       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:8px_8px]" />
                       
                       {/* Moving laser sweeping line */}
-                      <div className="absolute left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#00a884] to-transparent shadow-[0_0_8px_#00a884] animate-laser z-10 pointer-events-none" />
+                      <div className="absolute left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FFDA03] to-transparent shadow-[0_0_8px_#FFDA03] animate-laser z-10 pointer-events-none" />
 
                       {/* Animated Draw-On Success Vector Checkmark */}
-                      <svg className="w-12 h-12 text-[#00a884] relative z-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <svg className="w-12 h-12 text-[#FFEEB7] relative z-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                         <circle cx="12" cy="12" r="10" className="opacity-20" />
                         <path 
                           strokeLinecap="round" 
@@ -1693,8 +1277,8 @@ export default function App() {
 
                   <div className="space-y-3">
                     <h3 className="text-2xl font-serif text-white tracking-tight">Transmission Successful</h3>
-                    <p className="text-xs text-zinc-400 max-w-sm mx-auto font-sans leading-relaxed">
-                      Your campaign configuration and parameters have been logged. The creative directors of <span className="text-[#00a884] font-medium">THE PHOTO BLOG.INDIA.1</span> are reviewing the assets.
+                    <p className="text-xs text-[#FFEEB7]/85 max-w-sm mx-auto font-sans leading-relaxed">
+                      Your campaign configuration and parameters have been logged. The creative directors of <span className="text-[#FFEEB7] font-medium font-serif italic">THE PHOTO BLOG.INDIA</span> are reviewing the assets.
                     </p>
                   </div>
 
@@ -1702,9 +1286,9 @@ export default function App() {
                   <div className="bg-[#050505] border border-white/5 rounded-none p-6 text-left max-w-md mx-auto space-y-4 text-xs font-mono relative overflow-hidden">
                     {/* Subtle digital background indicator */}
                     <div className="absolute top-2 right-2 flex gap-1 items-center opacity-30">
-                      <span className="w-1 h-3 bg-emerald-500 animate-wave" style={{ animationDelay: '0.1s' }} />
-                      <span className="w-1 h-4 bg-emerald-500 animate-wave" style={{ animationDelay: '0.3s' }} />
-                      <span className="w-1 h-2 bg-emerald-500 animate-wave" style={{ animationDelay: '0.2s' }} />
+                      <span className="w-1 h-3 bg-[#FFEEB7] animate-wave" style={{ animationDelay: '0.1s' }} />
+                      <span className="w-1 h-4 bg-[#FFEEB7] animate-wave" style={{ animationDelay: '0.3s' }} />
+                      <span className="w-1 h-2 bg-[#FFEEB7] animate-wave" style={{ animationDelay: '0.2s' }} />
                     </div>
 
                     <div className="flex items-center justify-between border-b border-white/5 pb-3">
@@ -1727,7 +1311,7 @@ export default function App() {
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-zinc-500">STATUS CODE</span>
-                      <span className="text-emerald-400 flex items-center gap-1">● BRIEFING LOGGED</span>
+                      <span className="text-[#FFEEB7] flex items-center gap-1">● BRIEFING LOGGED</span>
                     </div>
                   </div>
 
@@ -1751,10 +1335,10 @@ export default function App() {
                     </button>
 
                     <a
-                      href={`https://wa.me/919145961226?text=Hi!%20Just%20submitted%20our%20campaign%20brief%20on%20your%20website%20under%20the%20name%20of%20${encodeURIComponent(formData.fullName)}%20for%20${encodeURIComponent(formData.companyName || 'our brand')}.`}
+                      href={`https://wa.me/919145961226?text=Hi!%20Just%20submitted%2520our%2520campaign%252520brief%2520on%2520your%2520website%2520under%2520the%2520name%2520of%2520${encodeURIComponent(formData.fullName)}%2520for%2520${encodeURIComponent(formData.companyName || 'our brand')}.`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-black py-2.5 px-4 rounded-none font-bold text-xs transition-all uppercase gap-1"
+                      className="w-full flex items-center justify-center bg-[#FFEEB7] hover:bg-[#FFDA03] text-black py-2.5 px-4 rounded-none font-bold text-xs transition-colors uppercase gap-1 cursor-pointer"
                     >
                       Instant WhatsApp ping
                       <MessageCircle className="w-3.5 h-3.5" />
@@ -1773,19 +1357,19 @@ export default function App() {
       </AnimatePresence>
 
       {/* 10. ELITE FOOTER */}
-      <EditorialDivider label="09 // END CREDITS & ARCHIVE" />
+      <EditorialDivider label="03 // END CREDITS & ARCHIVE" />
       <footer className="bg-black py-16 px-6 md:px-12 text-zinc-400 relative z-30 font-mono">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start justify-between gap-12">
           
           <div className="space-y-4 max-w-sm">
             {/* Logo */}
             <div className="flex flex-col items-start text-left">
-              <span className="font-serif italic text-base font-semibold text-white uppercase tracking-tight">
-                THE PHOTO BLOG.INDIA.1
+              <span className="font-serif italic text-base font-semibold text-white uppercase tracking-wider text-lg">
+                THE PHOTO BLOG.INDIA
               </span>
             </div>
             <p className="text-[11px] text-zinc-500 leading-relaxed font-sans">
-              High-end visual directing, cinematic strategy, luxury lifestyle campaigns and exclusive media partnerships across metropolitan Indian centers.
+              High-end brand direction, social media marketing, performance campaigns, visual identity design, and premium packaging development for visionary founders and businesses. Rooted in Jaipur, growing globally.
             </p>
           </div>
 
@@ -1794,30 +1378,37 @@ export default function App() {
             <div className="space-y-4 text-xs">
               <h5 className="text-zinc-500 tracking-widest uppercase">NAVIGATE</h5>
               <div className="flex flex-col gap-2 uppercase tracking-[0.12em] text-[10px] text-zinc-400">
-                <button onClick={() => scrollToSection('about')} className="text-left hover:text-white transition-colors">About Agency</button>
-                <button onClick={() => scrollToSection('services')} className="text-left hover:text-white transition-colors">Services Spec</button>
-                <button onClick={() => scrollToSection('estimator')} className="text-left hover:text-white transition-colors">Package Builder</button>
-                <button onClick={() => scrollToSection('portfolio')} className="text-left hover:text-white transition-colors">Our Showreel</button>
+                <button onClick={() => scrollToSection('about')} className="text-left hover:text-[#FFDA03] transition-colors">About Us</button>
+                <button onClick={() => scrollToSection('services')} className="text-left hover:text-[#FFDA03] transition-colors">Services Spec</button>
+                <button onClick={() => scrollToSection('contact')} className="text-left hover:text-[#FFDA03] transition-colors">Contact Us</button>
               </div>
             </div>
 
             <div className="space-y-4 text-xs">
-              <h5 className="text-zinc-500 tracking-widest uppercase">SYNDICATIONS</h5>
-              <div className="flex flex-col gap-2 text-[10px] text-zinc-400 tracking-[0.12em] uppercase">
-                <a href="https://www.instagram.com/thephotoblog.india.1/" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1">@thephotoblog.india.1</a>
-                <span className="cursor-default">Cinematic Reels</span>
-                <span className="cursor-default">Brand Collabs</span>
-                <span className="cursor-default">Behind Scene</span>
+              <h5 className="text-zinc-500 tracking-widest uppercase font-mono">SYNDICATIONS</h5>
+              <div className="flex flex-col gap-2.5 text-[10px] text-zinc-400 tracking-[0.12em] uppercase font-mono">
+                <a href="https://www.instagram.com/thephotoblog.india.1?igsh=cHNmbW95b3MxcjI0" target="_blank" rel="noreferrer" className="hover:text-[#FFDA03] transition-colors flex items-center gap-2">
+                  <Instagram className="w-3.5 h-3.5" /> Instagram
+                </a>
+                <a href="https://www.facebook.com/profile.php?id=61590800301684&mibextid=wwXIfr" target="_blank" rel="noreferrer" className="hover:text-[#FFDA03] transition-colors flex items-center gap-2">
+                  <Facebook className="w-3.5 h-3.5" /> Facebook
+                </a>
+                <a href="https://www.linkedin.com/company/the-photo-blog-india/" target="_blank" rel="noreferrer" className="hover:text-[#FFDA03] transition-colors flex items-center gap-2">
+                  <Linkedin className="w-3.5 h-3.5" /> LinkedIn
+                </a>
+                <a href="https://wa.me/919145961226" target="_blank" rel="noreferrer" className="hover:text-[#FFDA03] transition-colors flex items-center gap-2">
+                  <MessageCircle className="w-3.5 h-3.5" /> WhatsApp Chat
+                </a>
               </div>
             </div>
 
             <div className="space-y-4 text-xs col-span-2 sm:col-span-1">
-              <h5 className="text-zinc-500 tracking-widest uppercase font-mono">REPRESENTATION</h5>
-              <div className="flex flex-col gap-1 text-[10px] text-zinc-450 leading-normal uppercase">
+              <h5 className="text-[#FFEEB7] tracking-widest uppercase font-mono font-bold">REPRESENTATION</h5>
+              <div className="flex flex-col gap-1 text-[10px] text-zinc-400 leading-normal uppercase">
                 <span className="text-white font-semibold flex items-center gap-1">● Jaipur Headquarters</span>
                 <span>Mumbai Creative Hub</span>
                 <span>New Delhi Studio</span>
-                <span className="text-zinc-650 mt-2">© {new Date().getFullYear()} TPB</span>
+                <span className="text-zinc-600 mt-2">© {new Date().getFullYear()} THE PHOTO BLOG.INDIA</span>
               </div>
             </div>
           </div>
@@ -1826,7 +1417,7 @@ export default function App() {
 
         {/* Divider and absolute bottom details */}
         <div className="max-w-7xl mx-auto h-px bg-white/10 mt-16 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[9px] text-zinc-600 uppercase">
-          <p>THE PHOTO BLOG.INDIA.1 IS AN INDEPENDENT DIGITAL MEDIA TRADEMARK OPERATIONAL IN INDIA.</p>
+          <p>THE PHOTO BLOG.INDIA IS AN INDEPENDENT DIGITAL MEDIA TRADEMARK OPERATIONAL IN INDIA.</p>
           <div className="flex items-center gap-4">
             <span>8K S Standards</span>
             <span>✦</span>
@@ -1834,7 +1425,7 @@ export default function App() {
             <span>✦</span>
             <button
               onClick={navigateToAdmin}
-              className="hover:text-[#00bfa5] transition-colors cursor-pointer text-[#00a884] lowercase font-mono tracking-widest text-[8.5px]"
+              className="hover:text-[#FFDA03] transition-colors cursor-pointer text-[#FFEEB7]/60 lowercase font-mono tracking-widest text-[8.5px]"
             >
               [agency-key]
             </button>
@@ -1854,7 +1445,7 @@ export default function App() {
           >
             {/* Header control line */}
             <div className="flex items-center justify-between font-mono text-[10px] text-zinc-500 uppercase tracking-widest border-b border-white/10 pb-4">
-              <span>THE PHOTO BLOG.INDIA.1 ✦ CASE PORTFOLIO</span>
+              <span>THE PHOTO BLOG.INDIA ✦ CASE PORTFOLIO</span>
               <span>FRAME {portfolioItems.findIndex(item => item.id === selectedPortfolioItem.id) + 1} / {portfolioItems.length}</span>
               <button 
                 onClick={handleCloseLightbox}
@@ -1908,7 +1499,7 @@ export default function App() {
                 <div className="border-t border-white/10 pt-4 space-y-3 font-mono text-xs">
                   <div className="flex justify-between items-center text-zinc-500">
                     <span>CO-DIRECTOR</span>
-                    <span className="text-zinc-200">THE PHOTO BLOG.INDIA.1</span>
+                    <span className="text-zinc-200">THE PHOTO BLOG.INDIA</span>
                   </div>
                   <div className="flex justify-between items-center text-zinc-500">
                     <span>LAUNCH COLLAB</span>
@@ -1920,7 +1511,7 @@ export default function App() {
                   </div>
                   <div className="flex justify-between items-center text-zinc-500">
                     <span>TRACTION</span>
-                    <span className="text-emerald-400 font-semibold">{selectedPortfolioItem.impact}</span>
+                    <span className="text-[#FFDA03] font-semibold">{selectedPortfolioItem.impact}</span>
                   </div>
                 </div>
 
@@ -1945,7 +1536,7 @@ export default function App() {
                   >
                     {isCopied ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <Check className="w-3.5 h-3.5 text-[#FFDA03]" />
                         <span>Link Copied</span>
                       </>
                     ) : (
@@ -2029,5 +1620,6 @@ export default function App() {
       )}
 
     </motion.div>
+    </>
   );
 }

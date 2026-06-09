@@ -329,7 +329,7 @@ We'd love to lock in our package and schedule an introduction call!`;
             {/* Interactive Moodboard Tile Builder step */}
             <div className="border border-white/5 bg-black/40 p-4 space-y-3.5">
               <div>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-[#00a884] font-mono block">Canvas Builder // Interactive Tactile Selection</span>
+                <span className="text-[10px] uppercase tracking-[0.2em] text-[#FFEEB7] font-mono block">Canvas Builder // Interactive Tactile Selection</span>
                 <h5 className="text-xs font-serif text-zinc-300 mt-1">Refine Aesthetic Board</h5>
                 <p className="text-[10px] text-zinc-500 font-sans leading-relaxed">Toggle individual mood stills to customize your pre-production editorial profile.</p>
               </div>
@@ -458,7 +458,7 @@ We'd love to lock in our package and schedule an introduction call!`;
                 onClick={handleWhatsAppShare}
                 className="flex items-center justify-center gap-1.5 border border-zinc-800 hover:border-white text-zinc-300 py-2 px-1 text-[9px] uppercase font-mono tracking-wider transition-colors cursor-pointer"
               >
-                <Phone className="w-3 h-3 text-[#00a884]" /> WhatsApp
+                <Phone className="w-3 h-3 text-[#FFEEB7]" /> WhatsApp
               </button>
 
               <button
@@ -524,7 +524,7 @@ We'd love to lock in our package and schedule an introduction call!`;
               <div id="thephotoblog-print-sheet" className="space-y-6 font-mono text-zinc-300">
                 <div className="border-b border-zinc-800 pb-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div>
-                    <h1 className="text-xl font-serif text-white italic tracking-wider">THE PHOTO BLOG.INDIA.1</h1>
+                    <h1 className="text-xl font-serif text-white italic tracking-wider">THE PHOTO BLOG.INDIA</h1>
                     <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">Premium Visual Syndication & Editorial Production</p>
                   </div>
                   <div className="text-right text-[10px] text-zinc-500 space-y-0.5">
@@ -593,7 +593,7 @@ We'd love to lock in our package and schedule an introduction call!`;
                   <div className="text-right space-y-1">
                     <span className="text-[10px] text-zinc-500 block uppercase tracking-wider">PROJECT INVESTMENT PROFILE</span>
                     <div className="text-2xl font-serif font-bold text-white tracking-tight">{priceStats.rangeText}</div>
-                    <p className="text-[9px] text-[#00a884] uppercase tracking-widest">Converted dynamically from dynamic Daily USD rates (1 USD = ₹{priceStats.exchangeRate.toFixed(2)} INR)</p>
+                    <p className="text-[9px] text-[#FFEEB7] uppercase tracking-widest">Converted dynamically from dynamic Daily USD rates (1 USD = ₹{priceStats.exchangeRate.toFixed(2)} INR)</p>
                   </div>
                 </div>
 

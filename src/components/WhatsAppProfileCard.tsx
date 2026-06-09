@@ -56,17 +56,17 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
     ? `${currentDay.name} (${currentDay.index === 0 ? 'Closed' : 'Open'})`
     : 'Business hours';
 
-  // The premium custom SVG logo of "THE PHOTO BLOG.INDIA.1 / MUSKAN" as shown in the screenshot
+  // The premium custom SVG logo of "THE PHOTO BLOG.INDIA / MUSKAN" as shown in the screenshot
   const BrandLogoSVG = () => (
     <svg viewBox="0 0 200 200" className="w-full h-full text-black p-4" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Outer circular layout path hint */}
       <circle cx="100" cy="100" r="92" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.2" />
       
-      {/* Top Semi-circular Text "THE PHOTO BLOG.INDIA.1" */}
+      {/* Top Semi-circular Text "THE PHOTO BLOG.INDIA" */}
       <path id="curve-top" d="M 30,100 A 70,70 0 0,1 170,100" className="fill-none" />
       <text className="font-mono text-[9px] uppercase tracking-[0.18em] fill-black font-semibold">
         <textPath href="#curve-top" startOffset="50%" textAnchor="middle">
-          THE PHOTO BLOG.INDIA.1
+          THE PHOTO BLOG.INDIA
         </textPath>
       </text>
 
@@ -118,7 +118,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
             </div>
           </div>
           <h3 className="text-xl font-semibold text-white mt-4 font-serif">Muskan Mundhra</h3>
-          <span className="text-[10px] font-mono text-[#8696a0] tracking-widest mt-1">THE PHOTO BLOG.INDIA.1</span>
+          <span className="text-[10px] font-mono text-[#8696a0] tracking-widest mt-1">THE PHOTO BLOG.INDIA</span>
         </div>
 
         {/* Brand Slogans and Slogan Card */}
@@ -175,7 +175,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
                       key={day.name} 
                       className={`flex justify-between py-1 px-2 ${
                         isToday 
-                          ? 'text-[#bf8b33] font-bold bg-white/5 border-l-2 border-[#bf8b33]' 
+                          ? 'text-[#FFEEB7] font-bold bg-white/5 border-l-2 border-[#FFEEB7]' 
                           : 'text-zinc-400'
                       }`}
                     >
@@ -229,7 +229,7 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
 
           {/* Instagram Link */}
           <a 
-            href="https://www.instagram.com/thephotoblog.india.1/" 
+            href="https://www.instagram.com/thephotoblog.india.1?igsh=cHNmbW95b3MxcjI0" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="flex items-center gap-3 group"
@@ -295,10 +295,10 @@ export default function WhatsAppProfileCard({ onImageClick, portfolioItems, conf
         <div className="pt-2 text-center">
           <Magnetic>
             <a
-              href={`https://wa.me/+91${config?.phone || "9145961226"}?text=Hi%20Muskan%20Mundhra%2C%20we'd%20love%20to%20discuss%20a%20social%20media%20management%20and%20branding%20collaboration%20with%20The%20Photo%20Blog%252520India.1%252520hub.`}
+              href="https://wa.me/919145961226?text=Hi%20Muskan%20Mundhra%2C%20we'd%20love%20to%20discuss%20a%20social%20media%20management%20and%20branding%20collaboration%20with%20The%20Photo%20Blog%20India%20hub."
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-full min-w-[280px] bg-[#00a884] hover:bg-[#00bfa5] text-black py-3 px-4 font-bold text-xs tracking-widest uppercase transition-all rounded-none items-center justify-center gap-2 font-mono"
+              className="inline-flex w-full min-w-[280px] bg-[#FFEEB7] hover:bg-[#FFDA03] text-black py-3 px-4 font-bold text-xs tracking-widest uppercase transition-colors rounded-none items-center justify-center gap-2 font-mono cursor-pointer"
             >
               Start WhatsApp Chat <MessageCircle className="w-4 h-4 fill-black" />
             </a>

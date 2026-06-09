@@ -6,22 +6,27 @@
   --font-serif: 'Playfair Display', Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: 'JetBrains Mono', SFMono-Regular, Consolas, "Liberation Mono", monospace;
   
-  --color-gold-50: #fbf9f2;
-  --color-gold-100: #f4edd9;
-  --color-gold-200: #e8dbb0;
-  --color-gold-300: #dcc280;
+  --color-gold-50: #FFEEB7;
+  --color-gold-100: #ffdca3;
+  --color-gold-200: #ffda03;
+  --color-gold-300: #e2be00;
   --color-gold-400: #cfa754;
-  --color-gold-500: #bf8b33;
-  --color-gold-600: #a77126;
+  --color-gold-500: #FFDA03;
+  --color-gold-600: #d4b200;
   --color-gold-700: #86551f;
   --color-gold-800: #6a421b;
   --color-gold-900: #573419;
   --color-gold-950: #331b0c;
+  
+  --color-brand-yellow: #FFDA03;
+  --color-brand-cream: #FFEEB7;
+  --color-brand-black: #000000;
+  --color-brand-white: #FFFFFF;
 }
 
 @layer base {
   body {
-    @apply bg-[#080808] text-[#F5F5F5] antialiased selection:bg-gold-500/30 selection:text-white;
+    @apply bg-[#000000] text-[#FFFFFF] antialiased selection:bg-[#FFDA03] selection:text-black;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }

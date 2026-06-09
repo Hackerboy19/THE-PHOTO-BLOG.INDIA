@@ -56,7 +56,7 @@ export default function InstagramGrid({ handle = '@thephotoblog.india.1' }: Inst
             <div className="w-16 h-16 bg-black flex items-center justify-center overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&q=80&w=150"
-                alt="THE PHOTO BLOG.INDIA.1"
+                alt="THE PHOTO BLOG.INDIA"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />

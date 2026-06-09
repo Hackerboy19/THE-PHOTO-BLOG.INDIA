@@ -51,7 +51,7 @@ export default function ZoomableLightboxImage({ src, alt }: ZoomableLightboxImag
             exit={{ opacity: 0, y: -10 }}
             className="absolute bottom-4 left-4 z-30 flex items-center gap-2 bg-black/80 border border-white/10 px-3 py-1.5 font-mono text-[9px] text-zinc-400 tracking-wider uppercase pointer-events-none"
           >
-            <SearchCode className="w-3.5 h-3.5 text-[#00a884] animate-pulse" />
+            <SearchCode className="w-3.5 h-3.5 text-[#FFEEB7] animate-pulse" />
             <span>Hover Image to Inspect Details [2.0X]</span>
           </motion.div>
         )}
@@ -64,9 +64,9 @@ export default function ZoomableLightboxImage({ src, alt }: ZoomableLightboxImag
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 0.8, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute top-4 right-4 z-30 font-mono text-[9px] bg-black/90 border border-[#00a884]/30 px-2.5 py-1 text-zinc-400 pointer-events-none flex gap-3"
+            className="absolute top-4 right-4 z-30 font-mono text-[9px] bg-black/90 border border-[#FFEEB7]/30 px-2.5 py-1 text-zinc-400 pointer-events-none flex gap-3"
           >
-            <span className="text-[#00a884]">✦ RESOLUTION DETECTED</span>
+            <span className="text-[#FFEEB7]">✦ RESOLUTION DETECTED</span>
             <span>X: {zoomState.x.toFixed(0)}%</span>
             <span>Y: {zoomState.y.toFixed(0)}%</span>
           </motion.div>

@@ -75,7 +75,7 @@ export const WHY_CHOOSE_US_DATA: WhyChooseUsItem[] = [
 export const TESTIMONIALS_DATA: Testimonial[] = [
   {
     id: "t-1",
-    quote: "THE PHOTO BLOG.INDIA.1 reshaped our high-fashion luxury launch. Their cinematic teasers didn't just showcase our collection; they crafted an immersive philosophy that sold out our reservation list in hours.",
+    quote: "THE PHOTO BLOG.INDIA reshaped our high-fashion luxury launch. Their cinematic teasers didn't just showcase our collection; they crafted an immersive philosophy that sold out our reservation list in hours.",
     author: "Prisha Mehra",
     role: "Art Director",
     brand: "SIA Luxury Couture",

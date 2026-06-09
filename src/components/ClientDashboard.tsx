@@ -351,7 +351,7 @@ export default function ClientDashboard() {
       {/* Top Banner Context Header */}
       <div className="border-b border-white/5 py-4 px-6 md:px-12 flex justify-between items-center bg-[#070707] no-print">
         <div className="flex items-center gap-3">
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="h-2 w-2 rounded-full bg-[#FFEEB7] animate-pulse" />
           <span className="font-mono text-[10px] tracking-widest text-zinc-400 uppercase">
             STUDIO PRODUCER ROOM v2.1
           </span>
@@ -425,7 +425,7 @@ export default function ClientDashboard() {
             </form>
 
             <div className="bg-[#070707] border border-white/5 p-4 text-left space-y-2">
-              <span className="text-[9px] font-mono tracking-widest text-[#00a884] uppercase font-bold block">
+              <span className="text-[9px] font-mono tracking-widest text-[#FFEEB7] uppercase font-bold block">
                 ✦ Sandbox Environment Active
               </span>
               <p className="text-[11px] text-zinc-400 font-sans leading-normal">
@@ -448,7 +448,7 @@ export default function ClientDashboard() {
                   <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500 bg-zinc-950 border border-white/5 px-2 py-0.5">
                     Live Client Portal
                   </span>
-                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#00a884] px-1">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#FFEEB7] px-1">
                     • Securely Synchronised
                   </span>
                 </div>
@@ -527,7 +527,7 @@ export default function ClientDashboard() {
                             0{idx + 1}
                           </span>
                           {isCompleted ? (
-                            <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                            <CheckCircle className="w-3.5 h-3.5 text-[#FFEEB7]" />
                           ) : isInProgress ? (
                             <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
                           ) : (
@@ -606,7 +606,7 @@ export default function ClientDashboard() {
                   return (
                     <div className="bg-zinc-950/60 border border-white/10 p-5 space-y-4">
                       <div>
-                        <span className="text-[10px] uppercase font-mono tracking-[0.2em] text-[#00a884] block">✦ Time-Travel Frame Compare</span>
+                        <span className="text-[10px] uppercase font-mono tracking-[0.2em] text-[#FFEEB7] block">✦ Time-Travel Frame Compare</span>
                         <h4 className="text-sm font-serif text-white mt-1">RAW Camera LOG vs Luxury Grade</h4>
                         <p className="text-[10px] text-zinc-500 font-sans leading-relaxed">
                           Slide dynamically to contrast the flat, unedited camera RAW LOG versus the color-graded premium film look calibrated in-house.
@@ -712,7 +712,7 @@ export default function ClientDashboard() {
                           <div 
                             key={still.id}
                             className={`p-3 bg-[#070707] border transition-colors relative group ${
-                              approved ? 'border-emerald-500/40 bg-zinc-950/40' : 'border-white/5'
+                              approved ? 'border-[#FFEEB7]/40 bg-zinc-950/40' : 'border-white/5'
                             }`}
                           >
                             <div className="aspect-[4/3] bg-zinc-900/60 overflow-hidden relative">
@@ -734,7 +734,7 @@ export default function ClientDashboard() {
                                 onClick={() => handleToggleStillApproval(still.id)}
                                 className={`text-[9px] font-mono tracking-widest uppercase px-2 py-1 transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
                                   approved 
-                                    ? 'bg-emerald-950/60 border border-emerald-500/20 text-emerald-400' 
+                                    ? 'bg-[#FFEEB7]/10 border border-[#FFEEB7]/30 text-[#FFEEB7]' 
                                     : 'bg-white text-black hover:bg-zinc-200'
                                 }`}
                               >
@@ -772,7 +772,7 @@ export default function ClientDashboard() {
                         <div key={c.id} className="border-b border-white/5 pb-3 last:border-0 last:pb-0 text-xs">
                           <div className="flex justify-between items-center text-[10px] font-mono text-zinc-400 mb-1">
                             <div className="flex items-center gap-1.5">
-                              <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                              <span className="h-1 w-1 rounded-full bg-[#FFEEB7]" />
                               <span className="font-bold text-white">{c.author}</span>
                             </div>
                             <span className="text-zinc-600">{c.createdDate}</span>
@@ -783,7 +783,7 @@ export default function ClientDashboard() {
                           </p>
 
                           {/* Time code marker */}
-                          <div className="flex items-center gap-1 text-[9px] font-mono text-[#00a884] uppercase bg-emerald-950/20 border border-emerald-500/10 px-2 py-0.5 w-fit">
+                          <div className="flex items-center gap-1 text-[9px] font-mono text-[#FFEEB7] uppercase bg-[#FFEEB7]/10 border border-[#FFEEB7]/10 px-2 py-0.5 w-fit">
                             <Clock className="w-2.5 h-2.5" /> FRAME TIME REFERENCE: {c.timestamp}
                           </div>
                         </div>

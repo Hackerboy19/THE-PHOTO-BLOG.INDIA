@@ -307,6 +307,51 @@ export async function deletePortfolioItem(id: string): Promise<void> {
   }
 }
 
+/**
+ * Subscribes to the live portfolio items roster with real-time reactive sync.
+ * Cascades to local storage subscription loops during standard local pre-views.
+ */
+export function subscribeToPortfolioItems(onUpdate: (items: PortfolioItem[]) => void): () => void {
+  if (isFirebaseActive && db) {
+    try {
+      const colRef = collection(db, 'portfolio');
+      const unsubscribe = onSnapshot(colRef, (querySnap) => {
+        const items: PortfolioItem[] = [];
+        querySnap.forEach((d) => {
+          items.push({ id: d.id, ...d.data() } as PortfolioItem);
+        });
+        if (items.length > 0) {
+          onUpdate(items);
+        } else {
+          getPortfolioItems().then(onUpdate);
+        }
+      }, (err) => {
+        console.warn("Error in portfolio onSnapshot sub:", err);
+      });
+      return unsubscribe;
+    } catch (err) {
+      console.warn("Failed to subscribe portfolio snapshot:", err);
+    }
+  }
+
+  // Fallback: Reactive LocalStorage Polling
+  let lastState = '';
+  const poll = async () => {
+    try {
+      const items = await getPortfolioItems();
+      const stringified = JSON.stringify(items);
+      if (stringified !== lastState) {
+        lastState = stringified;
+        onUpdate(items);
+      }
+    } catch (_) {}
+  };
+
+  poll();
+  const intervalId = setInterval(poll, 1000);
+  return () => clearInterval(intervalId);
+}
+
 // ==========================================
 // NEW EXTENDED SITE CONTROL CONFIGS & ENDPOINTS
 // ==========================================

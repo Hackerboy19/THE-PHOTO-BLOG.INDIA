@@ -63,7 +63,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
     { type: 'services', label: 'Capabilities Grid', icon: ListTodo },
     { type: 'estimator', label: 'Price Engine', icon: Sliders },
     { type: 'whyUs', label: 'Trust Vectors', icon: HelpCircle },
-    { type: 'portfolio', label: 'Live Portfolio', icon: Camera },
+    { type: 'portfolio', label: '✦ Live Media Engine', icon: Camera },
     { type: 'instagram', label: 'Instagram Feed', icon: Film },
     { type: 'testimonials', label: 'Endorsements', icon: MessageSquare },
     { type: 'whatsapp', label: 'WhatsApp Widget', icon: Film },

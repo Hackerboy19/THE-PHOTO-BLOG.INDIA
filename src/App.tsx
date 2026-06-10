@@ -68,7 +68,8 @@ import {
   getWhyChooseUs,
   getTestimonials,
   getWhatsAppConfig,
-  getSectionVisibility
+  getSectionVisibility,
+  subscribeToPortfolioItems
 } from './lib/firebase';
 const AdminLogin = React.lazy(() => import('./components/admin/AdminLogin'));
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));
@@ -236,6 +237,14 @@ export default function App() {
     }
     loadResources();
   }, [isAdminRoute]); // Reload when entering/leaving admin to sync instant changes
+
+  // Subscribe to real-time portfolio updates from either Firebase or localStorage
+  useEffect(() => {
+    const unsubscribe = subscribeToPortfolioItems((items) => {
+      setPortfolioItems(items);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleAdminLogin = (user: { email: string; uid: string; displayName: string }) => {
     saveMockUser(user);
@@ -851,7 +860,7 @@ export default function App() {
             <EditorialDivider label="01 // THE AGENCY STATEMENT" />
             <motion.section 
             id="about" 
-            className="py-24 md:py-32 bg-black px-6 md:px-12 relative"
+            className="py-24 md:py-32 bg-[#FFDA03] px-6 md:px-12 relative text-black"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -863,11 +872,11 @@ export default function App() {
             <div className="lg:col-span-5 relative group">
               
               {/* Cinematic crop frame lines */}
-              <div className="absolute -inset-4 border border-white/5 pointer-events-none rounded-none" />
-              <div className="absolute top-2 left-2 text-[8px] font-mono text-zinc-600 uppercase tracking-widest">FILM PREVIEW // FRAME #392</div>
-              <div className="absolute bottom-2 right-2 text-[8px] font-mono text-zinc-600 uppercase tracking-widest">RESOLUTION: 8K UNCOMPRESSED</div>
+              <div className="absolute -inset-4 border border-black/5 pointer-events-none rounded-none" />
+              <div className="absolute top-2 left-2 text-[8px] font-mono text-zinc-800 uppercase tracking-widest">FILM PREVIEW // FRAME #392</div>
+              <div className="absolute bottom-2 right-2 text-[8px] font-mono text-zinc-800 uppercase tracking-widest">RESOLUTION: 8K UNCOMPRESSED</div>
 
-              <div className="aspect-square md:aspect-[4/5] rounded-none overflow-hidden bg-zinc-900 border border-white/10">
+              <div className="aspect-square md:aspect-[4/5] rounded-none overflow-hidden bg-[#FFEEB7] border border-black/10">
                 <picture>
                   <source srcSet={getOptimizedImageUrl(aboutSettings?.aboutImage || ABOUT_IMAGE, 800, 'avif')} type="image/avif" />
                   <source srcSet={getOptimizedImageUrl(aboutSettings?.aboutImage || ABOUT_IMAGE, 800, 'webp')} type="image/webp" />
@@ -886,12 +895,12 @@ export default function App() {
 
             {/* About Text Content Column */}
             <div className="lg:col-span-7 space-y-6">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-[#FFEEB7] uppercase font-bold">THE AGENCY</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white leading-tight">
-                We don’t just market. <span className="italic font-normal text-zinc-350">We build brands.</span> <span className="block mt-2 text-xl sm:text-2xl font-sans font-semibold tracking-wider text-zinc-400">Jaipur rooted. Growing globally.</span>
+              <span className="text-[10px] font-mono tracking-[0.2em] text-[#000000] uppercase font-bold">THE AGENCY</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-black leading-tight">
+                We don’t just market. <span className="italic font-normal text-zinc-850">We build brands.</span> <span className="block mt-2 text-xl sm:text-2xl font-sans font-semibold tracking-wider text-black/75">Jaipur rooted. Growing globally.</span>
               </h2>
               
-              <div className="text-zinc-400 text-sm md:text-base leading-relaxed space-y-4 font-sans">
+              <div className="text-zinc-900 text-sm md:text-base leading-relaxed space-y-4 font-sans font-medium">
                 {aboutSettings?.backstory ? (
                   <p className="whitespace-pre-line">{aboutSettings.backstory}</p>
                 ) : (
@@ -901,16 +910,16 @@ export default function App() {
                 )}
               </div>
 
-              {/* Founder Profile Block */}
-              <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row gap-5 items-start">
-                <div className="w-14 h-14 shrink-0 border border-white/10 bg-zinc-900 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-[#FFEEB7]/10" />
+              {/* Founder Profile Block - Contrasting Soft Warm Cream (#FFEEB7) */}
+              <div className="mt-8 pt-6 border-t border-black/10 flex flex-col sm:flex-row gap-5 items-start bg-[#FFEEB7] p-6 border border-black/10 shadow-sm">
+                <div className="w-14 h-14 shrink-0 border border-black/15 bg-black overflow-hidden relative">
+                  <div className="absolute inset-0 bg-[#FFDA03]/10" />
                   <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200" alt="Muskan Mundhra" className="w-full h-full object-cover filter grayscale" />
                 </div>
                 <div>
-                  <h4 className="font-serif text-white text-base font-semibold">Muskan Mundhra</h4>
-                  <p className="text-[10px] font-mono text-[#FFEEB7] uppercase tracking-wider font-bold">Founder & Creative Director</p>
-                  <p className="text-zinc-400 text-xs font-sans leading-relaxed mt-2 font-light">
+                  <h4 className="font-serif text-black text-base font-bold">Muskan Mundhra</h4>
+                  <p className="text-[10px] font-mono text-black uppercase tracking-wider font-bold">Founder & Creative Director</p>
+                  <p className="text-zinc-800 text-xs font-sans leading-relaxed mt-2 font-normal">
                     Our founder, Muskan Mundhra, completed her M.Sc in Entrepreneurship & Innovation Management from the University of Liverpool before taking the plunge to pursue her dream of shaping the digital world through strategy-driven and impactful branding.
                   </p>
                 </div>
@@ -918,17 +927,17 @@ export default function App() {
 
               {/* Core facts blocks */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-6">
-                <div className="border-l border-white/20 pl-4 space-y-1">
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">EXPERIENCE</span>
-                  <div className="text-lg font-bold font-sans text-white">8+ Years</div>
+                <div className="border-l border-black/20 pl-4 space-y-1">
+                  <span className="text-[10px] font-mono text-zinc-800 uppercase tracking-widest font-semibold">EXPERIENCE</span>
+                  <div className="text-lg font-bold font-sans text-black">8+ Years</div>
                 </div>
-                <div className="border-l border-white/20 pl-4 space-y-1">
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">COLLABORATIONS</span>
-                  <div className="text-lg font-bold font-sans text-white">50+ Elite Brands</div>
+                <div className="border-l border-black/20 pl-4 space-y-1">
+                  <span className="text-[10px] font-mono text-zinc-800 uppercase tracking-widest font-semibold">COLLABORATIONS</span>
+                  <div className="text-lg font-bold font-sans text-black">50+ Elite Brands</div>
                 </div>
-                <div className="border-l border-white/20 pl-4 space-y-1 col-span-2 md:col-span-1">
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">INSTAGRAM</span>
-                  <div className="text-lg font-bold font-sans text-white">@thephotoblog.india.1</div>
+                <div className="border-l border-black/20 pl-4 space-y-1 col-span-2 md:col-span-1">
+                  <span className="text-[10px] font-mono text-zinc-800 uppercase tracking-widest font-semibold">INSTAGRAM</span>
+                  <div className="text-lg font-bold font-sans text-black">@thephotoblog.india.1</div>
                 </div>
               </div>
 
@@ -968,22 +977,22 @@ export default function App() {
               className="flex flex-col md:flex-row md:items-end justify-between gap-6"
             >
               <div className="max-w-xl space-y-2">
-                <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Core Capabilities</span>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white">Our Services Spec</h2>
-                <p className="text-sm text-zinc-400">Crafting deliberate digital touchpoints. We turn standard advertising assets into emotional cinematic experiences.</p>
+                <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-900 uppercase font-semibold">Core Capabilities</span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-black font-bold">Our Services Spec</h2>
+                <p className="text-sm text-zinc-900 font-medium">Crafting deliberate digital touchpoints. We turn standard advertising assets into emotional cinematic experiences.</p>
               </div>
               
               {/* Estimate package navigation shortcut */}
               <button
                  onClick={() => scrollToSection('estimator')}
-                 className="flex items-center gap-2 text-[10px] font-mono tracking-widest text-white hover:text-zinc-400 transition-all uppercase self-start group cursor-pointer"
+                 className="flex items-center gap-2 text-[10px] font-mono tracking-widest text-black hover:text-zinc-750 transition-all uppercase self-start group cursor-pointer font-bold"
               >
                 Interactive Estimator
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </motion.div>
 
-            {/* Services Grid */}
+            {/* Services Grid with contrasting Soft Warm Cream (#FFEEB7) cards and minimalist black structural outlines */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
               {(servicesData.length > 0 ? servicesData : SERVICES_DATA)
                 .filter(srv => !srv.hidden)
@@ -991,28 +1000,28 @@ export default function App() {
                   <motion.div
                     key={service.id}
                     variants={fadeInUpVariants}
-                    className="group relative bg-[#0a0a0a] border border-white/10 p-8 md:p-10 rounded-none transition-all duration-300 flex flex-col justify-between overflow-hidden hover:border-white/30"
+                    className="group relative bg-[#FFEEB7] border border-black/15 p-8 md:p-10 rounded-none transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-sm hover:border-black/40 hover:shadow-md"
                   >
                     {/* Decorative index indicator absolute top */}
-                    <div className="absolute top-6 right-8 text-2xl font-serif italic text-zinc-800 group-hover:text-white/10 transition-colors pointer-events-none">
+                    <div className="absolute top-6 right-8 text-2xl font-serif italic text-black/10 group-hover:text-black/20 transition-colors pointer-events-none">
                       0{idx + 1}
                     </div>
 
                     <div className="space-y-4">
-                      <div className="inline-block px-3 py-1 bg-zinc-900/60 border border-white/10 rounded-none text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+                      <div className="inline-block px-3 py-1 bg-black text-[#FFDA03] border border-black/5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider">
                         {service.metric}
                       </div>
-                      <h3 className="text-xl sm:text-2xl font-serif text-white group-hover:text-zinc-200 transition-colors">{service.title}</h3>
-                      <p className="text-sm text-zinc-405 leading-relaxed max-w-lg">{service.description}</p>
+                      <h3 className="text-xl sm:text-2xl font-serif text-black font-bold transition-colors">{service.title}</h3>
+                      <p className="text-sm text-zinc-900 leading-relaxed max-w-lg font-medium">{service.description}</p>
                     </div>
 
                     {/* Bullets */}
-                    <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
-                      <span className="text-[9px] font-mono tracking-[0.15em] text-zinc-500 uppercase block">SPECIFICATIONS</span>
+                    <div className="mt-8 pt-6 border-t border-black/10 space-y-2">
+                      <span className="text-[9px] font-mono tracking-[0.15em] text-zinc-800 uppercase block font-semibold">SPECIFICATIONS</span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {service.features.map((feat, fIdx) => (
-                          <div key={fIdx} className="flex items-center text-xs text-zinc-300 font-sans gap-2">
-                            <span className="w-1.5 h-1.5 bg-white" />
+                          <div key={fIdx} className="flex items-center text-xs text-zinc-905 font-sans gap-2 font-medium">
+                            <span className="w-1.5 h-1.5 bg-black" />
                             {feat}
                           </div>
                         ))}
@@ -1026,12 +1035,12 @@ export default function App() {
             {/* Niche Industry Alignment Section (Explicitly requested sectors) */}
             <motion.div 
               variants={fadeInUpVariants}
-              className="mt-20 pt-16 border-t border-white/10 space-y-8"
+              className="mt-20 pt-16 border-t border-black/10 space-y-8"
             >
               <div>
-                <span className="text-[10px] font-mono tracking-[0.2em] text-[#FFEEB7] uppercase block font-bold">Strategic Focus</span>
-                <h3 className="text-2xl sm:text-3xl font-serif text-white mt-1">Niche Industries We Serve</h3>
-                <p className="text-sm text-zinc-400 max-w-2xl mt-2 font-sans">
+                <span className="text-[10px] font-mono tracking-[0.2em] text-black uppercase block font-bold">Strategic Focus</span>
+                <h3 className="text-2xl sm:text-3xl font-serif text-black font-bold mt-1">Niche Industries We Serve</h3>
+                <p className="text-sm text-zinc-900 max-w-2xl mt-2 font-sans font-medium">
                   We specialize in tailoring high-end branding, content strategy, and meta campaigns for specific industry sectors. By understanding the intricate nuances of these spaces, we generate authentic digital momentum.
                 </p>
               </div>
@@ -1044,11 +1053,11 @@ export default function App() {
                   { name: "MSMEs", desc: "Strategy driven growth and business traction" },
                   { name: "Community", desc: "Fostering tribal loyalty & authentic engagement" }
                 ].map((ind, iIdx) => (
-                  <div key={iIdx} className="bg-[#0a0a0a] border border-white/5 hover:border-[#FFEEB7]/20 p-6 transition-all group relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-[2px] h-0 bg-[#FFDA03] group-hover:h-full transition-all duration-300" />
-                    <span className="text-xs font-mono text-[#FFDA03] block mb-2">0{iIdx + 1} //</span>
-                    <h4 className="text-lg font-serif text-white group-hover:text-[#FFEEB7] transition-colors">{ind.name}</h4>
-                    <p className="text-[11px] text-zinc-500 mt-2 font-sans leading-relaxed">{ind.desc}</p>
+                  <div key={iIdx} className="bg-[#FFEEB7] border border-black/10 hover:border-black/30 p-6 transition-all group relative overflow-hidden shadow-sm">
+                    <div className="absolute top-0 left-0 w-[2px] h-0 bg-black group-hover:h-full transition-all duration-300" />
+                    <span className="text-xs font-mono text-black block mb-2 font-bold">0{iIdx + 1} //</span>
+                    <h4 className="text-lg font-serif text-black font-bold transition-colors">{ind.name}</h4>
+                    <p className="text-[11px] text-zinc-800 mt-2 font-sans leading-relaxed font-normal">{ind.desc}</p>
                   </div>
                 ))}
               </div>
@@ -1074,7 +1083,7 @@ export default function App() {
             <EditorialDivider label="03 // CLIENT DIRECT OFFICE" />
             <motion.section 
             id="contact" 
-            className="py-24 md:py-32 bg-[#000000] px-6 md:px-12 relative"
+            className="py-24 md:py-32 bg-[#FFDA03] px-6 md:px-12 relative text-black"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -1085,9 +1094,9 @@ export default function App() {
           {/* Contact Details left */}
           <div className="lg:col-span-5 space-y-6 flex flex-col justify-start">
             <div className="space-y-4">
-              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase">Verified Business Detail</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-white tracking-tight font-medium">Let’s co-write your next visual chapter.</h2>
-              <p className="text-xs text-zinc-450 leading-relaxed">
+              <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-900 font-bold uppercase">Verified Business Detail</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-black tracking-tight font-bold">Let’s co-write your next visual chapter.</h2>
+              <p className="text-xs text-zinc-800 leading-relaxed font-medium">
                 Whether you are launch planning a high-end luxury lifestyle drop or seeking deep vertical storytelling reach, we are ready to direct. Contact us directly through our new Jaipur creative headquarters.
               </p>
             </div>
@@ -1101,17 +1110,17 @@ export default function App() {
               />
             )}
 
-            <div className="space-y-3 pt-4 border-t border-white/10">
-              <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest block">Alternate Hotline</span>
-              <div className="flex gap-4 items-center justify-between text-[11px] font-mono text-zinc-400">
+            <div className="space-y-3 pt-4 border-t border-black/10">
+              <span className="text-[8px] font-mono text-zinc-805 uppercase tracking-widest block font-bold">Alternate Hotline</span>
+              <div className="flex gap-4 items-center justify-between text-[11px] font-mono text-zinc-800 font-medium">
                 <span>JAIPUR CREATIVE HQ LINE</span>
-                <a href="tel:+919145961226" className="text-white hover:underline">+91 91459 61226</a>
+                <a href="tel:+919145961226" className="text-black font-bold hover:underline">+91 91459 61226</a>
               </div>
             </div>
           </div>
 
-          {/* Elegant active form right */}
-          <div className="lg:col-span-7 bg-[#0a0a0a] border border-white/10 p-8 md:p-10 rounded-none relative shadow-sm">
+          {/* Elegant active form right - Soft Warm Cream (#FFEEB7) container with minimalist black outline */}
+          <div className="lg:col-span-7 bg-[#FFEEB7] border border-black/15 p-8 md:p-10 rounded-none relative shadow-md">
             
             <AnimatePresence mode="wait">
               {!formSubmitted ? (
@@ -1123,14 +1132,14 @@ export default function App() {
                   className="space-y-6"
                 >
                   <div>
-                    <h3 className="text-xl font-serif text-white">Creative Engagement Inquiry</h3>
-                    <p className="text-xs text-zinc-500 mt-1">Submit your parameters to receive a customized visual deck and brief evaluation within 24 hours.</p>
+                    <h3 className="text-xl font-serif text-black font-bold">Creative Engagement Inquiry</h3>
+                    <p className="text-xs text-zinc-800 mt-1 font-medium">Submit your parameters to receive a customized visual deck and brief evaluation within 24 hours.</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Full Name */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Full Name *</label>
+                      <label className="text-[10px] font-mono text-zinc-900 uppercase tracking-wider block font-bold">Full Name *</label>
                       <input
                         type="text"
                         name="fullName"
@@ -1138,13 +1147,13 @@ export default function App() {
                         value={formData.fullName}
                         onChange={handleInputChange}
                         placeholder="e.g. Vikram Malhotra"
-                        className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all placeholder:text-zinc-600"
+                        className="w-full bg-white border border-black/15 text-xs text-black p-3 rounded-none focus:border-black focus:outline-none transition-all placeholder:text-zinc-400 font-medium"
                       />
                     </div>
 
                     {/* Email */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Corporate Email *</label>
+                      <label className="text-[10px] font-mono text-zinc-900 uppercase tracking-wider block font-bold">Corporate Email *</label>
                       <input
                         type="email"
                         name="email"
@@ -1152,7 +1161,7 @@ export default function App() {
                         value={formData.email}
                         onChange={handleInputChange}
                         placeholder="e.g. vikram@brand.com"
-                        className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all placeholder:text-zinc-600"
+                        className="w-full bg-white border border-black/15 text-xs text-black p-3 rounded-none focus:border-black focus:outline-none transition-all placeholder:text-zinc-400 font-medium"
                       />
                     </div>
                   </div>
@@ -1160,39 +1169,39 @@ export default function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Phone */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Contact Phone Code</label>
+                      <label className="text-[10px] font-mono text-zinc-900 uppercase tracking-wider block font-bold">Contact Phone Code</label>
                       <input
                         type="text"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
                         placeholder="e.g. +91 98330 12345"
-                        className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all placeholder:text-zinc-600"
+                        className="w-full bg-white border border-black/15 text-xs text-black p-3 rounded-none focus:border-black focus:outline-none transition-all placeholder:text-zinc-400 font-medium"
                       />
                     </div>
 
                     {/* Company name */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Brand / Company Label</label>
+                      <label className="text-[10px] font-mono text-zinc-900 uppercase tracking-wider block font-bold">Brand / Company Label</label>
                       <input
                         type="text"
                         name="companyName"
                         value={formData.companyName}
                         onChange={handleInputChange}
                         placeholder="e.g. Chronos Luxury Group"
-                        className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all placeholder:text-zinc-600"
+                        className="w-full bg-white border border-black/15 text-xs text-black p-3 rounded-none focus:border-black focus:outline-none transition-all placeholder:text-zinc-400 font-medium"
                       />
                     </div>
                   </div>
 
                   {/* Service selection */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Direct Service of Interest</label>
+                    <label className="text-[10px] font-mono text-zinc-900 uppercase tracking-wider block font-bold">Direct Service of Interest</label>
                     <select
                       name="serviceOfInterest"
                       value={formData.serviceOfInterest}
                       onChange={handleInputChange}
-                      className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all"
+                      className="w-full bg-white border border-black/15 text-xs text-black p-3 rounded-none focus:border-black focus:outline-none transition-all font-medium"
                     >
                       <option value="Cinematic Brand Campaigns">Cinematic Brand Campaigns</option>
                       <option value="Premium Editorial Photography">Premium Editorial Photography</option>
@@ -1203,21 +1212,22 @@ export default function App() {
 
                   {/* Project description brief */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Campaign Objective & Vision</label>
+                    <label className="text-[10px] font-mono text-zinc-900 uppercase tracking-wider block font-bold">Campaign Objective & Vision</label>
                     <textarea
                       name="projectMessage"
                       rows={4}
                       value={formData.projectMessage}
                       onChange={handleInputChange}
                       placeholder="Briefly describe your mood, timeline, or key objectives..."
-                      className="w-full bg-[#060606] border border-white/10 text-xs text-zinc-100 p-3 rounded-none focus:border-white focus:outline-none transition-all placeholder:text-zinc-600 resize-none font-sans"
+                      className="w-full bg-white border border-black/15 text-xs text-black p-3 rounded-none focus:border-black focus:outline-none transition-all placeholder:text-zinc-400 resize-none font-sans font-medium"
                     />
                   </div>
 
+                  {/* Solid dark fill with contrast yellow typography */}
                   <button
                     type="submit"
                     disabled={sendingForm}
-                    className="w-full bg-white hover:bg-zinc-200 text-black py-4 px-6 rounded-none font-bold text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 cursor-pointer border border-transparent disabled:opacity-50"
+                    className="w-full bg-black hover:bg-zinc-900 text-[#FFDA03] py-4 px-6 rounded-none font-bold text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 cursor-pointer border border-transparent disabled:opacity-50"
                   >
                     {sendingForm ? (
                       <>Transmitting Project Brief...</>
@@ -1229,7 +1239,7 @@ export default function App() {
                     )}
                   </button>
 
-                  <p className="text-[10px] text-zinc-550 text-center leading-normal">
+                  <p className="text-[10px] text-zinc-800 text-center leading-normal font-medium">
                     By submitting, you align with the photographic and cinematography standards of THE PHOTO BLOG.INDIA. We treat all creative proposals as strictly confidential.
                   </p>
                 </motion.form>
@@ -1358,17 +1368,17 @@ export default function App() {
 
       {/* 10. ELITE FOOTER */}
       <EditorialDivider label="03 // END CREDITS & ARCHIVE" />
-      <footer className="bg-black py-16 px-6 md:px-12 text-zinc-400 relative z-30 font-mono">
+      <footer className="bg-[#FFDA03] py-16 px-6 md:px-12 text-zinc-900 relative z-30 font-mono border-t border-black/5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start justify-between gap-12">
           
           <div className="space-y-4 max-w-sm">
             {/* Logo */}
             <div className="flex flex-col items-start text-left">
-              <span className="font-serif italic text-base font-semibold text-white uppercase tracking-wider text-lg">
+              <span className="font-serif italic text-base font-bold text-black uppercase tracking-wider text-lg">
                 THE PHOTO BLOG.INDIA
               </span>
             </div>
-            <p className="text-[11px] text-zinc-500 leading-relaxed font-sans">
+            <p className="text-[11px] text-zinc-800 leading-relaxed font-sans font-medium">
               High-end brand direction, social media marketing, performance campaigns, visual identity design, and premium packaging development for visionary founders and businesses. Rooted in Jaipur, growing globally.
             </p>
           </div>
@@ -1376,39 +1386,39 @@ export default function App() {
           {/* Useful links */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
             <div className="space-y-4 text-xs">
-              <h5 className="text-zinc-500 tracking-widest uppercase">NAVIGATE</h5>
-              <div className="flex flex-col gap-2 uppercase tracking-[0.12em] text-[10px] text-zinc-400">
-                <button onClick={() => scrollToSection('about')} className="text-left hover:text-[#FFDA03] transition-colors">About Us</button>
-                <button onClick={() => scrollToSection('services')} className="text-left hover:text-[#FFDA03] transition-colors">Services Spec</button>
-                <button onClick={() => scrollToSection('contact')} className="text-left hover:text-[#FFDA03] transition-colors">Contact Us</button>
+              <h5 className="text-zinc-800 font-bold tracking-widest uppercase">NAVIGATE</h5>
+              <div className="flex flex-col gap-2 uppercase tracking-[0.12em] text-[10px] text-zinc-900 font-medium">
+                <button onClick={() => scrollToSection('about')} className="text-left hover:text-black hover:underline transition-colors">About Us</button>
+                <button onClick={() => scrollToSection('services')} className="text-left hover:text-black hover:underline transition-colors">Services Spec</button>
+                <button onClick={() => scrollToSection('contact')} className="text-left hover:text-black hover:underline transition-colors">Contact Us</button>
               </div>
             </div>
 
             <div className="space-y-4 text-xs">
-              <h5 className="text-zinc-500 tracking-widest uppercase font-mono">SYNDICATIONS</h5>
-              <div className="flex flex-col gap-2.5 text-[10px] text-zinc-400 tracking-[0.12em] uppercase font-mono">
-                <a href="https://www.instagram.com/thephotoblog.india.1?igsh=cHNmbW95b3MxcjI0" target="_blank" rel="noreferrer" className="hover:text-[#FFDA03] transition-colors flex items-center gap-2">
+              <h5 className="text-zinc-800 font-bold tracking-widest uppercase font-mono">SYNDICATIONS</h5>
+              <div className="flex flex-col gap-2.5 text-[10px] text-zinc-900 tracking-[0.12em] uppercase font-mono font-medium">
+                <a href="https://www.instagram.com/thephotoblog.india.1?igsh=cHNmbW95b3MxcjI0" target="_blank" rel="noreferrer" className="hover:text-black hover:underline transition-colors flex items-center gap-2">
                   <Instagram className="w-3.5 h-3.5" /> Instagram
                 </a>
-                <a href="https://www.facebook.com/profile.php?id=61590800301684&mibextid=wwXIfr" target="_blank" rel="noreferrer" className="hover:text-[#FFDA03] transition-colors flex items-center gap-2">
+                <a href="https://www.facebook.com/profile.php?id=61590800301684&mibextid=wwXIfr" target="_blank" rel="noreferrer" className="hover:text-black hover:underline transition-colors flex items-center gap-2">
                   <Facebook className="w-3.5 h-3.5" /> Facebook
                 </a>
-                <a href="https://www.linkedin.com/company/the-photo-blog-india/" target="_blank" rel="noreferrer" className="hover:text-[#FFDA03] transition-colors flex items-center gap-2">
+                <a href="https://www.linkedin.com/company/the-photo-blog-india/" target="_blank" rel="noreferrer" className="hover:text-black hover:underline transition-colors flex items-center gap-2">
                   <Linkedin className="w-3.5 h-3.5" /> LinkedIn
                 </a>
-                <a href="https://wa.me/919145961226" target="_blank" rel="noreferrer" className="hover:text-[#FFDA03] transition-colors flex items-center gap-2">
+                <a href="https://wa.me/919145961226" target="_blank" rel="noreferrer" className="hover:text-black hover:underline transition-colors flex items-center gap-2">
                   <MessageCircle className="w-3.5 h-3.5" /> WhatsApp Chat
                 </a>
               </div>
             </div>
 
             <div className="space-y-4 text-xs col-span-2 sm:col-span-1">
-              <h5 className="text-[#FFEEB7] tracking-widest uppercase font-mono font-bold">REPRESENTATION</h5>
-              <div className="flex flex-col gap-1 text-[10px] text-zinc-400 leading-normal uppercase">
-                <span className="text-white font-semibold flex items-center gap-1">● Jaipur Headquarters</span>
+              <h5 className="text-black tracking-widest uppercase font-mono font-bold">REPRESENTATION</h5>
+              <div className="flex flex-col gap-1 text-[10px] text-zinc-900 leading-normal uppercase font-medium">
+                <span className="text-black font-extrabold flex items-center gap-1">● Jaipur Headquarters</span>
                 <span>Mumbai Creative Hub</span>
                 <span>New Delhi Studio</span>
-                <span className="text-zinc-600 mt-2">© {new Date().getFullYear()} THE PHOTO BLOG.INDIA</span>
+                <span className="text-zinc-700 mt-2 font-semibold">© {new Date().getFullYear()} THE PHOTO BLOG.INDIA</span>
               </div>
             </div>
           </div>
@@ -1416,7 +1426,7 @@ export default function App() {
         </div>
 
         {/* Divider and absolute bottom details */}
-        <div className="max-w-7xl mx-auto h-px bg-white/10 mt-16 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[9px] text-zinc-600 uppercase">
+        <div className="max-w-7xl mx-auto h-px bg-black/15 mt-16 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[9px] text-zinc-800 uppercase font-semibold">
           <p>THE PHOTO BLOG.INDIA IS AN INDEPENDENT DIGITAL MEDIA TRADEMARK OPERATIONAL IN INDIA.</p>
           <div className="flex items-center gap-4">
             <span>8K S Standards</span>
@@ -1425,7 +1435,7 @@ export default function App() {
             <span>✦</span>
             <button
               onClick={navigateToAdmin}
-              className="hover:text-[#FFDA03] transition-colors cursor-pointer text-[#FFEEB7]/60 lowercase font-mono tracking-widest text-[8.5px]"
+              className="hover:text-black transition-colors cursor-pointer text-black/60 lowercase font-mono tracking-widest text-[8.5px] font-bold"
             >
               [agency-key]
             </button>
